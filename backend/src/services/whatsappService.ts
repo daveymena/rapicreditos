@@ -9,7 +9,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import path from 'path';
 import pino from 'pino';
-import { AIService } from './aiService';
+import { AIService } from './aiService.js';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 
@@ -115,6 +115,15 @@ export class WhatsAppService {
                         .single();
 
                     if (agent) {
+                        const conversationId = await this.getOrCreateConversation(remoteJid, session.agent_id);
+
+                        // Guardar mensaje del cliente
+                        await this.supabase.from('messages').insert([{
+                            conversation_id: conversationId,
+                            sender_type: 'customer',
+                            content: body
+                        }]);
+
                         await this.sock!.sendPresenceUpdate('composing', remoteJid);
                         await delay(1000);
 
@@ -130,9 +139,9 @@ export class WhatsAppService {
 
                         await this.sock!.sendMessage(remoteJid, { text: aiResponse });
 
-                        // Guardar mensaje en historial
+                        // Guardar respuesta del agente
                         await this.supabase.from('messages').insert([{
-                            conversation_id: await this.getOrCreateConversation(remoteJid, session.agent_id),
+                            conversation_id: conversationId,
                             sender_type: 'agent',
                             content: aiResponse
                         }]);
