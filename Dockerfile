@@ -1,9 +1,9 @@
 # --- Stage 1: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm ci
-COPY . .
+COPY frontend/ .
 
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
