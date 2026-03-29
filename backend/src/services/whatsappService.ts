@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const logger = pino.default ? pino.default({ level: 'silent' }) : pino({ level: 'silent' });
+const logger = pino({ level: 'silent' });
 
 export class WhatsAppService {
     public sock: WASocket | null = null;
