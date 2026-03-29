@@ -82,7 +82,8 @@ export default function WhatsAppPage() {
             toast.success('Sesión iniciada. Esperando QR...');
             // Intentar avisar al backend (opcional si el backend escucha cambios)
             try {
-                await fetch(`http://localhost:3001/api/sessions/${data[0].id}/restart`, {
+                const apiUrl = import.meta.env.VITE_API_URL || '';
+                await fetch(`${apiUrl}/api/sessions/${data[0].id}/restart`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: user.id })
@@ -213,7 +214,21 @@ export default function WhatsAppPage() {
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <button className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest border border-white/5">
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const apiUrl = import.meta.env.VITE_API_URL || '';
+                                                await fetch(`${apiUrl}/api/sessions/${session.id}/restart`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ userId: user?.id })
+                                                });
+                                                toast.success('Reiniciando sesión...');
+                                            } catch {
+                                                toast.error('Error al reiniciar sesión');
+                                            }
+                                        }}
+                                        className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all font-bold text-xs uppercase tracking-widest border border-white/5">
                                         Reiniciar
                                     </button>
                                     <button

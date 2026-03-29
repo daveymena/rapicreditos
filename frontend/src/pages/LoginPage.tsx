@@ -31,14 +31,28 @@ export default function LoginPage() {
                     }
                 });
                 if (error) throw error;
-                toast.success('¡Registro exitoso! Ya puedes acceder a tu panel.');
+                toast.success('¡Registro exitoso! Revisa tu email para confirmar tu cuenta.');
                 setIsRegister(false);
             } else {
-                const { error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
-                if (error) throw error;
+                if (error) {
+                    if (error.message.toLowerCase().includes('email not confirmed') ||
+                        error.message.toLowerCase().includes('email_not_confirmed')) {
+                        toast.error('Debes confirmar tu email antes de entrar. Revisa tu bandeja de entrada.');
+                    } else if (error.message.toLowerCase().includes('invalid login')) {
+                        toast.error('Email o contraseña incorrectos.');
+                    } else {
+                        throw error;
+                    }
+                    return;
+                }
+                if (data.user && !data.user.email_confirmed_at) {
+                    toast.error('Confirma tu email primero. Revisa tu bandeja de entrada.');
+                    return;
+                }
                 toast.success('Bienvenido de nuevo');
             }
         } catch (error: any) {

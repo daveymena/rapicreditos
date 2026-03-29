@@ -32,5 +32,8 @@ auth_info_baileys
 *.swp
 *.swo
 
+# Sensitive
+EASYPANEL_ENV.txt
+
 # Temporary
 temp_repo
