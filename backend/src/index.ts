@@ -3,6 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { WhatsAppService } from './services/whatsappService.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -404,6 +409,14 @@ app.post('/api/sessions/:id/restart', async (req, res) => {
     }
 
     res.json({ message: 'Procesando conexión' });
+});
+
+// ─── Servir Frontend (Archivos Estáticos) ────────────────────
+const publicPath = path.join(__dirname, '../public');
+app.use(express.static(publicPath));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
