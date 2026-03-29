@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, ArrowLeft, KeyRound, CheckCircle, Loader2, AlertCircle } from "lucide-react";
@@ -54,7 +54,7 @@ const ForgotPassword = () => {
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
                         <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
-                            RapiCréditos
+                            Krédit
                         </span>
                     </Link>
                     <h1 className="text-2xl font-bold text-foreground">Recuperar Acceso</h1>

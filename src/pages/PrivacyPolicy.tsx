@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+﻿import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield } from "lucide-react";
@@ -20,7 +20,7 @@ const PrivacyPolicy = () => {
                                 <section>
                                     <h2 className="text-xl font-bold text-foreground">1. Introducción</h2>
                                     <p>
-                                        En RapiCréditos Pro, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política explica cómo recopilamos, usamos y protegemos la información de prestamistas y clientes.
+                                        En Krédit Pro, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta política explica cómo recopilamos, usamos y protegemos la información de prestamistas y clientes.
                                     </p>
                                 </section>
 

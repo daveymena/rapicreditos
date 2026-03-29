@@ -69,6 +69,7 @@ const NewLoan = () => {
         installments: "12",
         frequency: "monthly" as Frequency,
         startDate: new Date().toISOString().split("T")[0],
+        collectionStartDays: "1",
         notes: "",
         status: "active" as string
     });
@@ -123,6 +124,7 @@ const NewLoan = () => {
                     installments: data.installments?.toString() || "12",
                     frequency: (data.frequency as Frequency) || "monthly",
                     startDate: data.start_date,
+                    collectionStartDays: (data as any).collection_start_days?.toString() || "1",
                     notes: data.notes || "",
                     status: data.status || "active"
                 });
@@ -235,12 +237,13 @@ const NewLoan = () => {
                 interest_type: formData.interestType,
                 total_interest: calculation.totalInterest,
                 total_amount: calculation.totalAmount,
-                remaining_amount: id ? undefined : calculation.totalAmount, // Solo al crear
+                remaining_amount: id ? undefined : calculation.totalAmount,
                 installments: parseInt(formData.installments),
                 installment_amount: calculation.installmentAmount,
                 frequency: formData.frequency,
                 start_date: formData.startDate,
                 end_date: calculation.endDate,
+                collection_start_days: parseInt(formData.collectionStartDays) || 1,
                 notes: formData.notes || null,
             };
 
@@ -460,6 +463,28 @@ const NewLoan = () => {
                                                     required
                                                 />
                                             </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="collectionStartDays">Días para primer cobro</Label>
+                                            <div className="relative">
+                                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                                <Input
+                                                    id="collectionStartDays"
+                                                    type="number"
+                                                    min="1"
+                                                    max="365"
+                                                    placeholder="1"
+                                                    value={formData.collectionStartDays}
+                                                    onChange={(e) =>
+                                                        setFormData({ ...formData, collectionStartDays: e.target.value })
+                                                    }
+                                                    className="pl-10"
+                                                />
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Días desde el desembolso hasta la primera cuota
+                                            </p>
                                         </div>
 
                                         <div className="space-y-2">

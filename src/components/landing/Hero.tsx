@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, TrendingUp, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -48,7 +48,7 @@ const Hero = () => {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8"
           >
-            RapiCréditos digitaliza tu negocio de préstamos. Desde el registro del cliente hasta el certificado de Paz y Salvo, todo automatizado con IA.
+            Krédit digitaliza tu negocio de préstamos. Desde el registro del cliente hasta el certificado de Paz y Salvo, todo automatizado con IA.
           </motion.p>
 
           <motion.div
@@ -105,7 +105,7 @@ const Hero = () => {
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
             <img
               src={heroImage}
-              alt="RapiCréditos Dashboard"
+              alt="Krédit Dashboard"
               className="relative rounded-2xl shadow-2xl w-full max-w-2xl mx-auto animate-float"
             />
 

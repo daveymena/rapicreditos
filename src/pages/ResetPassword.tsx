@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, CheckCircle, Loader2, AlertCircle } from "lucide-react";
@@ -80,7 +80,7 @@ const ResetPassword = () => {
             >
                 <div className="text-center mb-8">
                     <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
-                        RapiCréditos
+                        Krédit
                     </span>
                     <h1 className="text-2xl font-bold text-foreground mt-4">Nueva Contraseña</h1>
                     <p className="text-muted-foreground mt-2">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Banknote, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,12 +55,8 @@ const Login = () => {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <Banknote className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">RapiCréditos</span>
+          <Link to="/" className="flex items-center mb-12">
+            <BrandLogo size={44} textSize="text-2xl" />
           </Link>
 
           <div className="mb-8">

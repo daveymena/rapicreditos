@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Banknote, Menu, X } from "lucide-react";
@@ -33,7 +33,7 @@ const Navbar = () => {
               <Banknote className="w-6 h-6 text-primary-foreground" />
             </div>
             <span className={`text-xl font-bold transition-colors ${isScrolled ? "text-foreground" : "text-primary-foreground"}`}>
-              RapiCréditos
+              Krédit
             </span>
           </Link>
 

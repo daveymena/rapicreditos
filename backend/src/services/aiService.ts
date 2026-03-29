@@ -53,11 +53,14 @@ export class AIService {
     }
 
     private async callGroq(system: string, user: string, config: AIConfig) {
+        const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY;
         const { data } = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: config.model,
-            messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
+            model: config.model || process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+            messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+            max_tokens: 400,
+            temperature: 0.3,
         }, {
-            headers: { 'Authorization': `Bearer ${process.env.AI_API_KEY}` }
+            headers: { 'Authorization': `Bearer ${apiKey}` }
         });
         return data.choices[0].message.content;
     }

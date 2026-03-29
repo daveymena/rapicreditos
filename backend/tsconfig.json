@@ -6,7 +6,6 @@
     "moduleResolution": "bundler",
     "target": "esnext",
     "lib": ["esnext"],
-    "types": ["node"],
     "sourceMap": true,
     "declaration": false,
     "noUncheckedIndexedAccess": false,

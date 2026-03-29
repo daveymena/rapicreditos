@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { ProtectedRoute, PublicRoute } from "@/components/auth/ProtectedRoute";
+import { AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { SplashScreen, TopProgressBar } from "@/components/ui/PageLoader";
 
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
@@ -38,15 +41,24 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const [splashDone, setSplashDone] = useState(false);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AdsManager />
-          <BrowserRouter>
-            <Routes>
+    <>
+      <AnimatePresence>
+        {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
+      </AnimatePresence>
+
+      {splashDone && (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AdsManager />
+              <BrowserRouter>
+                <TopProgressBar />
+                <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/unirme/:lenderId" element={<ClientOnboarding />} />
@@ -81,10 +93,12 @@ const App = () => {
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      )}
+    </>
   );
 };
 

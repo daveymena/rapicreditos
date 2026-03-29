@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, Shield, Zap, Globe, CreditCard } from "lucide-react";
+import { Check, Shield, Zap, Globe, CreditCard, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,13 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthContext";
 
 // Inicializar MercadoPago dentro del componente o controlando errores
 // initMercadoPago('APP_USR-23c2d74a-d01f-473e-a305-0e5999f023bc');
 
 const Pricing = () => {
+    const { isTrialExpired } = useAuth();
     const [currency, setCurrency] = useState<"COP" | "USD">("USD");
     const [price, setPrice] = useState(7);
     const [loading, setLoading] = useState(true);
@@ -47,41 +49,53 @@ const Pricing = () => {
     // Crear preferencia en el backend
     const createMercadoPagoPreference = async () => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
             const response = await fetch('/api/payments/create-preference', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     amount: 30000,
                     currency: 'COP',
-                    description: 'Suscripción RapiCréditos Pro - Mensual'
+                    description: 'Suscripción Krédit Pro - Mensual',
+                    userId: user?.id,
                 })
             });
 
+            if (!response.ok) throw new Error('Backend no disponible');
             const data = await response.json();
             if (data.preferenceId) {
                 setPreferenceId(data.preferenceId);
+                toast.success('Link de pago generado');
             }
         } catch (error) {
             console.error('Error creating preference:', error);
-            toast.error('Error al configurar el pago');
+            toast.error('Error al generar el link de pago. Verifica que el backend esté corriendo.');
         }
     };
 
     const handlePayPalApprove = async (data: any, actions: any) => {
+        const { data: { user } } = await supabase.auth.getUser();
         return actions.order.capture().then(async (details: any) => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { error } = await supabase
-                    .from("profiles")
-                    .update({ subscription_status: "pro" })
-                    .eq("user_id", user.id);
-
-                if (error) {
-                    console.error("Error activating subscription:", error);
-                    toast.error("Hubo un error al activar tu plan Pro");
-                } else {
+            // Capturar via backend para activar Pro
+            try {
+                const res = await fetch('/api/payments/paypal-capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: details.id, userId: user?.id })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    toast.success('¡Pago completado! Plan Pro activado.');
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch {
+                // Fallback: actualizar directo en Supabase
+                if (user) {
+                    await supabase.from("profiles")
+                        .update({ subscription_status: "pro" })
+                        .eq("user_id", user.id);
                     toast.success("¡Pago completado! Ahora eres Pro.");
-                    window.location.reload(); // Recargar para aplicar cambios
+                    setTimeout(() => window.location.reload(), 1500);
                 }
             }
         });
@@ -91,6 +105,21 @@ const Pricing = () => {
         <DashboardLayout>
             <div className="max-w-4xl mx-auto py-12 px-4">
                 <div className="text-center mb-12">
+                    {isTrialExpired && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-center gap-3 text-left"
+                        >
+                            <AlertTriangle className="w-6 h-6 text-destructive shrink-0" />
+                            <div>
+                                <p className="font-bold text-destructive text-sm">Tu período de prueba ha terminado</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    Los 7 días gratuitos han expirado. Activa el Plan Pro para seguir usando Krédit sin restricciones.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
                     <h1 className="text-4xl font-bold mb-4">Planes Simples y Transparentes</h1>
                     <p className="text-muted-foreground text-lg">
                         Comienza con 15 días gratis. Cancela cuando quieras.
@@ -234,7 +263,7 @@ const Pricing = () => {
                                                         intent: "CAPTURE",
                                                         purchase_units: [
                                                             {
-                                                                description: "Suscripción RapiCréditos Pro",
+                                                                description: "Suscripción Krédit Pro",
                                                                 amount: {
                                                                     currency_code: "USD",
                                                                     value: "7.00"
