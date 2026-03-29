@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
-import { Bot, Save, Settings2, Sparkles, Wand2, Stethoscope, Briefcase, ShoppingCart, Home, Code, GraduationCap, Loader2, Plus } from 'lucide-react';
+import { Bot, Save, Sparkles, Wand2, Stethoscope, Briefcase, ShoppingCart, Home, Code, GraduationCap, Loader2, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 

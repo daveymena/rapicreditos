@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import {
-    BarChart3,
     MessageSquare,
     Users,
     Zap,
@@ -73,7 +72,7 @@ export default function AnalyticsPage() {
             totalConversations: convs || 0,
             responseTime: "< 2s"
         });
-        setRecentMessages((recent as RecentMessage[]) || []);
+        setRecentMessages((recent as unknown as RecentMessage[]) || []);
         setLoading(false);
     }
 

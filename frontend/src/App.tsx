@@ -6,11 +6,9 @@ import {
     Zap,
     MessageSquare,
     ShieldCheck,
-    Plus,
     LogOut,
     BarChart3,
-    Sparkles,
-    ChevronRight
+    Sparkles
 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import WhatsAppPage from './pages/WhatsAppPage';
