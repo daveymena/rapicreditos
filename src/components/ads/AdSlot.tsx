@@ -16,6 +16,7 @@
 import { useEffect, useRef } from "react";
 import { Zap, Star, MessageSquare, TrendingUp, X } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export type AdSlotId = "banner-top" | "banner-bottom" | "sidebar" | "mobile-bottom";
 
@@ -114,11 +115,11 @@ const HouseAd = ({ slot }: { slot: AdSlotId }) => {
 
     if (slot === "mobile-bottom") {
         return (
-            <a href={ad.href} className={`flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r ${ad.bg} text-white text-xs font-medium rounded-lg w-full max-w-[320px] mx-auto`}>
+            <Link to={ad.href} className={`flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r ${ad.bg} text-white text-xs font-medium rounded-lg w-full max-w-[320px] mx-auto`}>
                 {ad.icon}
                 <span className="flex-1 truncate">{ad.title}</span>
                 <span className="text-yellow-200 font-bold shrink-0">{ad.cta}</span>
-            </a>
+            </Link>
         );
     }
 
@@ -131,10 +132,10 @@ const HouseAd = ({ slot }: { slot: AdSlotId }) => {
                 <div className="text-[9px] uppercase tracking-widest text-white/50 mb-3">Publicidad</div>
                 <div className="mb-3">{ad.icon}</div>
                 <h4 className="font-bold text-base mb-1">{ad.title}</h4>
-                <p className="text-white/80 text-xs mb-4">{ad.desc}</p>
-                <a href={ad.href} className="block text-center bg-white/20 hover:bg-white/30 transition-colors rounded-xl py-2 text-sm font-bold">
+                <p className="text-white/80 text-xs mb-4">{(ad as any).desc}</p>
+                <Link to={ad.href} className="block text-center bg-white/20 hover:bg-white/30 transition-colors rounded-xl py-2 text-sm font-bold">
                     {ad.cta}
-                </a>
+                </Link>
             </div>
         );
     }
@@ -149,11 +150,11 @@ const HouseAd = ({ slot }: { slot: AdSlotId }) => {
             <div className="shrink-0 mt-1">{ad.icon}</div>
             <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm truncate">{ad.title}</p>
-                <p className="text-white/75 text-xs truncate">{ad.desc}</p>
+                <p className="text-white/75 text-xs truncate">{(ad as any).desc}</p>
             </div>
-            <a href={ad.href} className="shrink-0 bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap">
+            <Link to={ad.href} className="shrink-0 bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap">
                 {ad.cta}
-            </a>
+            </Link>
         </div>
     );
 };
