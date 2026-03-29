@@ -19,6 +19,9 @@ import {
     Percent,
     CreditCard,
     X,
+    ShieldCheck,
+    ShieldOff,
+    QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -28,6 +31,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +64,81 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [userId, setUserId] = useState<string>("");
+
+    // MFA state
+    const [mfaEnabled, setMfaEnabled] = useState(false);
+    const [showMfaSetup, setShowMfaSetup] = useState(false);
+    const [showMfaDisable, setShowMfaDisable] = useState(false);
+    const [mfaQR, setMfaQR] = useState("");
+    const [mfaSecret, setMfaSecret] = useState("");
+    const [mfaFactorId, setMfaFactorId] = useState("");
+    const [mfaCode, setMfaCode] = useState("");
+    const [isMfaLoading, setIsMfaLoading] = useState(false);
+
+    const checkMfaStatus = async () => {
+        const { data } = await supabase.auth.mfa.listFactors();
+        const totpFactor = data?.totp?.find(f => f.status === "verified");
+        setMfaEnabled(!!totpFactor);
+        if (totpFactor) setMfaFactorId(totpFactor.id);
+    };
+
+    const handleEnableMfa = async () => {
+        setIsMfaLoading(true);
+        try {
+            const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Krédit App" });
+            if (error) throw error;
+            setMfaFactorId(data.id);
+            setMfaQR(data.totp.qr_code);
+            setMfaSecret(data.totp.secret);
+            setShowMfaSetup(true);
+        } catch (e: any) {
+            toast.error(e.message || "Error al activar 2FA");
+        } finally {
+            setIsMfaLoading(false);
+        }
+    };
+
+    const handleVerifyMfa = async () => {
+        if (mfaCode.length !== 6) return;
+        setIsMfaLoading(true);
+        try {
+            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+            if (challengeError) throw challengeError;
+
+            const { error: verifyError } = await supabase.auth.mfa.verify({
+                factorId: mfaFactorId,
+                challengeId: challengeData.id,
+                code: mfaCode,
+            });
+            if (verifyError) throw verifyError;
+
+            setMfaEnabled(true);
+            setShowMfaSetup(false);
+            setMfaCode("");
+            toast.success("2FA activado correctamente");
+        } catch (e: any) {
+            toast.error("Código incorrecto. Intenta de nuevo.");
+        } finally {
+            setIsMfaLoading(false);
+        }
+    };
+
+    const handleDisableMfa = async () => {
+        setIsMfaLoading(true);
+        try {
+            const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+            if (error) throw error;
+            setMfaEnabled(false);
+            setMfaFactorId("");
+            setShowMfaDisable(false);
+            toast.success("2FA desactivado");
+        } catch (e: any) {
+            toast.error(e.message || "Error al desactivar 2FA");
+        } finally {
+            setIsMfaLoading(false);
+        }
+    };
+
     const [profileData, setProfileData] = useState<ProfileData>({
         full_name: "",
         email: "",
@@ -69,6 +156,7 @@ const Profile = () => {
 
     useEffect(() => {
         loadProfile();
+        checkMfaStatus();
     }, []);
 
     const loadProfile = async () => {
@@ -261,11 +349,86 @@ const Profile = () => {
                                             </div>
                                             <div>
                                                 <p className="font-medium text-sm">Autenticación 2FA</p>
-                                                <p className="text-xs text-muted-foreground">Desactivado</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {mfaEnabled ? "Activado — Google Authenticator / Authy" : "Desactivado"}
+                                                </p>
                                             </div>
                                         </div>
-                                        <Switch disabled />
+                                        <Button
+                                            variant={mfaEnabled ? "destructive" : "outline"}
+                                            size="sm"
+                                            className="text-xs h-8"
+                                            onClick={() => mfaEnabled ? setShowMfaDisable(true) : handleEnableMfa()}
+                                            disabled={isMfaLoading}
+                                        >
+                                            {isMfaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : mfaEnabled ? <><ShieldOff className="w-3 h-3 mr-1" />Desactivar</> : <><ShieldCheck className="w-3 h-3 mr-1" />Activar</>}
+                                        </Button>
                                     </div>
+
+                                    {/* Dialog: Setup MFA */}
+                                    <Dialog open={showMfaSetup} onOpenChange={setShowMfaSetup}>
+                                        <DialogContent className="w-[92vw] max-w-sm rounded-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle className="flex items-center gap-2">
+                                                    <QrCode className="w-5 h-5 text-primary" />
+                                                    Activar Autenticación 2FA
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    Escanea el código QR con Google Authenticator o Authy, luego ingresa el código de 6 dígitos.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="flex flex-col items-center gap-4 py-2">
+                                                {mfaQR && (
+                                                    <img src={mfaQR} alt="QR 2FA" className="w-44 h-44 rounded-xl border p-2 bg-white" />
+                                                )}
+                                                <div className="text-center">
+                                                    <p className="text-xs text-muted-foreground mb-1">O ingresa la clave manual:</p>
+                                                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all">{mfaSecret}</code>
+                                                </div>
+                                                <div className="w-full space-y-2">
+                                                    <Label className="text-xs">Código de verificación</Label>
+                                                    <InputOTP maxLength={6} value={mfaCode} onChange={setMfaCode}>
+                                                        <InputOTPGroup>
+                                                            <InputOTPSlot index={0} />
+                                                            <InputOTPSlot index={1} />
+                                                            <InputOTPSlot index={2} />
+                                                            <InputOTPSlot index={3} />
+                                                            <InputOTPSlot index={4} />
+                                                            <InputOTPSlot index={5} />
+                                                        </InputOTPGroup>
+                                                    </InputOTP>
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button className="w-full" onClick={handleVerifyMfa} disabled={mfaCode.length !== 6 || isMfaLoading}>
+                                                    {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                                                    Confirmar y Activar
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    {/* Dialog: Disable MFA */}
+                                    <Dialog open={showMfaDisable} onOpenChange={setShowMfaDisable}>
+                                        <DialogContent className="w-[92vw] max-w-sm rounded-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-destructive flex items-center gap-2">
+                                                    <ShieldOff className="w-5 h-5" />
+                                                    Desactivar 2FA
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    ¿Estás seguro? Tu cuenta quedará menos protegida.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <DialogFooter className="gap-2">
+                                                <Button variant="outline" onClick={() => setShowMfaDisable(false)}>Cancelar</Button>
+                                                <Button variant="destructive" onClick={handleDisableMfa} disabled={isMfaLoading}>
+                                                    {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                    Sí, desactivar
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
 
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
