@@ -17,7 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logger = pino({ level: 'silent' });
 
 export class WhatsAppService {
-    private sock: WASocket | null = null;
+    public sock: WASocket | null = null;
     private sessionId: string;
     private userId: string;
     private supabase;
@@ -106,8 +106,16 @@ export class WhatsAppService {
                     .eq('id', this.sessionId)
                     .single();
 
+                // 2. Obtener prompt del agente (o usar prompt de cobranza por defecto)
+                let systemPrompt = `Eres un asistente de cobranza amable y profesional de Krédit. 
+Ayudas a los clientes con consultas sobre sus préstamos, fechas de pago y saldos pendientes.
+Responde siempre en español, de forma breve y cordial. Máximo 3 oraciones.
+Si el cliente pregunta por su saldo o cuota, dile que puede consultarlo directamente con su asesor.`;
+                let modelName = process.env.AI_PROVIDER === 'groq'
+                    ? (process.env.GROQ_MODEL || 'llama-3.1-8b-instant')
+                    : (process.env.AI_MODEL || 'qwen2.5:0.5b');
+
                 if (session?.agent_id) {
-                    // 2. Obtener prompt del agente
                     const { data: agent } = await this.supabase
                         .from('ai_agents')
                         .select('system_prompt, model_name, temperature')
@@ -115,29 +123,33 @@ export class WhatsAppService {
                         .single();
 
                     if (agent) {
-                        await this.sock!.sendPresenceUpdate('composing', remoteJid);
-                        await delay(1000);
-
-                        const aiResponse = await AIService.getInstance().generateResponse(
-                            agent.system_prompt,
-                            body,
-                            {
-                                provider: process.env.AI_PROVIDER || 'ollama',
-                                model: agent.model_name,
-                                baseUrl: process.env.AI_BASE_URL || undefined
-                            }
-                        );
-
-                        await this.sock!.sendMessage(remoteJid, { text: aiResponse });
-
-                        // Guardar mensaje en historial
-                        await this.supabase.from('messages').insert([{
-                            conversation_id: await this.getOrCreateConversation(remoteJid, session.agent_id),
-                            sender_type: 'agent',
-                            content: aiResponse
-                        }]);
+                        systemPrompt = agent.system_prompt;
+                        modelName = agent.model_name;
                     }
                 }
+
+                await this.sock!.sendPresenceUpdate('composing', remoteJid);
+                await delay(1200);
+
+                const aiResponse = await AIService.getInstance().generateResponse(
+                    systemPrompt,
+                    body,
+                    {
+                        provider: process.env.AI_PROVIDER || 'ollama',
+                        model: modelName,
+                        baseUrl: process.env.AI_BASE_URL || undefined
+                    }
+                );
+
+                await this.sock!.sendMessage(remoteJid, { text: aiResponse });
+
+                // Guardar mensaje en historial
+                const convId = await this.getOrCreateConversation(remoteJid, session?.agent_id || 'default');
+                await this.supabase.from('messages').insert([{
+                    conversation_id: convId,
+                    sender_type: 'agent',
+                    content: aiResponse
+                }]);
             }
         });
     }

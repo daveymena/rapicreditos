@@ -270,6 +270,82 @@ app.post('/api/payments/paypal-capture', async (req, res) => {
     }
 });
 
+// ─── Scheduler de recordatorios automáticos ──────────────
+async function sendDailyReminders() {
+    console.log('[Scheduler] Ejecutando recordatorios diarios...');
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        // Buscar préstamos activos con cuotas vencidas o que vencen hoy
+        const { data: loans } = await supabase
+            .from('loans')
+            .select(`
+                id, loan_number, installment_amount, frequency, end_date, user_id,
+                clients (full_name, phone)
+            `)
+            .in('status', ['active', 'defaulted'])
+            .lte('end_date', today);
+
+        if (!loans || loans.length === 0) {
+            console.log('[Scheduler] Sin préstamos vencidos hoy.');
+            return;
+        }
+
+        for (const loan of loans) {
+            const client = (loan as any).clients;
+            if (!client?.phone) continue;
+
+            // Buscar sesión WhatsApp activa del prestamista
+            const { data: session } = await supabase
+                .from('whatsapp_sessions')
+                .select('id')
+                .eq('user_id', loan.user_id)
+                .eq('status', 'connected')
+                .single();
+
+            if (!session) continue;
+
+            const phone = client.phone.replace(/\D/g, '');
+            const jid = phone.startsWith('57') ? `${phone}@s.whatsapp.net` : `57${phone}@s.whatsapp.net`;
+
+            const msg = `Hola ${client.full_name.split(' ')[0]} 👋, te recordamos que tienes una cuota pendiente del préstamo *${loan.loan_number}* por *$${Number(loan.installment_amount).toLocaleString('es-CO')}*.\n\nPor favor realiza tu pago a tiempo para evitar cargos adicionales. ¡Gracias! 🙏`;
+
+            // Enviar via sesión activa en memoria
+            const waService = activeSessions[session.id];
+            if (waService) {
+                await (waService as any).sock?.sendMessage(jid, { text: msg });
+                console.log(`[Scheduler] Recordatorio enviado a ${client.full_name}`);
+
+                // Registrar en messages
+                await supabase.from('messages').insert([{
+                    conversation_id: null,
+                    sender_type: 'agent',
+                    content: msg
+                }]);
+            }
+        }
+    } catch (error) {
+        console.error('[Scheduler] Error:', error);
+    }
+}
+
+// Ejecutar scheduler diario a las 8:00 AM
+function scheduleDailyAt8AM() {
+    const now = new Date();
+    const next8AM = new Date();
+    next8AM.setHours(8, 0, 0, 0);
+    if (now >= next8AM) next8AM.setDate(next8AM.getDate() + 1);
+    const msUntil8AM = next8AM.getTime() - now.getTime();
+
+    setTimeout(() => {
+        sendDailyReminders();
+        setInterval(sendDailyReminders, 24 * 60 * 60 * 1000); // cada 24h
+    }, msUntil8AM);
+
+    console.log(`[Scheduler] Próximo envío de recordatorios: ${next8AM.toLocaleString('es-CO')}`);
+}
+
 async function monitorSessions() {
     console.log('[Sistema] Monitoreando sesiones en Supabase...');
     try {
@@ -331,6 +407,7 @@ app.post('/api/sessions/:id/restart', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 [BACKEND] RapiCredi AI Heartbeat en puerto ${PORT}`);
+    console.log(`🚀 [BACKEND] Krédit AI Heartbeat en puerto ${PORT}`);
     monitorSessions();
+    scheduleDailyAt8AM();
 });
