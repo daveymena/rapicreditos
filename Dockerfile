@@ -5,11 +5,12 @@ COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
 
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
+ARG SUPABASE_URL
+ARG SUPABASE_ANON_KEY
+ARG VITE_API_URL=/api
 
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://placeholder.supabase.co}
-ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-placeholder}
+ENV VITE_SUPABASE_URL=${SUPABASE_URL:-https://placeholder.supabase.co}
+ENV VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-placeholder}
 ENV VITE_API_URL=/api
 
 RUN npm run build
