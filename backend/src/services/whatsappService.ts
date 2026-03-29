@@ -9,12 +9,12 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import path from 'path';
 import pino from 'pino';
-import { AIService } from './aiService';
+import { AIService } from './aiService.js';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const logger = pino({ level: 'silent' });
+const logger = pino.default ? pino.default({ level: 'silent' }) : pino({ level: 'silent' });
 
 export class WhatsAppService {
     public sock: WASocket | null = null;
