@@ -61,7 +61,7 @@ const ClientOnboarding = () => {
     }, [lenderId]);
 
     useEffect(() => {
-        if (formData.requested_amount && lenderConfig) {
+        if (formData.requested_amount) {
             calculateLoan();
         }
     }, [formData.requested_amount, formData.installments, formData.frequency, lenderConfig]);
@@ -76,8 +76,11 @@ const ClientOnboarding = () => {
 
             if (error) throw error;
             if (data) setLenderConfig(data);
+            else setLenderConfig({ full_name: "tu asesor", currency: "COP", default_interest_rate: 20, late_fee_policy: "" });
         } catch (e) {
             console.error("Error loading lender config:", e);
+            // Usar config por defecto para que el formulario funcione igual
+            setLenderConfig({ full_name: "tu asesor", currency: "COP", default_interest_rate: 20, late_fee_policy: "" });
         }
     };
 
@@ -136,6 +139,19 @@ const ClientOnboarding = () => {
             // 2. Create Loan (Pending)
             if (calculation) {
                 const loanNumber = `REQ-${Date.now().toString().slice(-6)}`;
+                const startDate = new Date().toISOString().split('T')[0];
+                // Calcular end_date según frecuencia e installments
+                const endDateObj = new Date();
+                const inst = parseInt(formData.installments) || 1;
+                const freq = formData.frequency;
+                for (let i = 0; i < inst; i++) {
+                    if (freq === 'daily') endDateObj.setDate(endDateObj.getDate() + 1);
+                    else if (freq === 'weekly') endDateObj.setDate(endDateObj.getDate() + 7);
+                    else if (freq === 'biweekly') endDateObj.setDate(endDateObj.getDate() + 15);
+                    else endDateObj.setMonth(endDateObj.getMonth() + 1);
+                }
+                const endDate = endDateObj.toISOString().split('T')[0];
+
                 const { error: loanError } = await supabase.from("loans").insert({
                     user_id: lenderId,
                     client_id: clientData.id,
@@ -147,12 +163,13 @@ const ClientOnboarding = () => {
                     total_amount: calculation.totalAmount,
                     remaining_amount: calculation.totalAmount,
                     paid_amount: 0,
-                    installments: parseInt(formData.installments),
+                    installments: inst,
                     installment_amount: calculation.installmentAmount,
                     frequency: formData.frequency,
-                    status: "pending", // Important: lender must approve
+                    status: "pending",
                     notes: `Solicitud enviada por el cliente. ${formData.notes || ""}`,
-                    start_date: new Date().toISOString().split('T')[0]
+                    start_date: startDate,
+                    end_date: endDate,
                 });
 
                 if (loanError) throw loanError;
@@ -362,7 +379,7 @@ const ClientOnboarding = () => {
 
                                 <Button
                                     type="submit"
-                                    disabled={isLoading || !acceptedTerms || !calculation}
+                                    disabled={isLoading || !acceptedTerms || !formData.full_name || !formData.phone || !formData.document_number || !formData.requested_amount}
                                     className="w-full h-14 text-lg bg-primary hover:bg-primary-hover shadow-glow"
                                 >
                                     {isLoading ? "Enviando..." : "Enviar Solicitud"}
