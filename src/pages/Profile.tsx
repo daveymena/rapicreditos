@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -17,6 +17,8 @@ import {
     Bell,
     DollarSign,
     Percent,
+    CreditCard,
+    X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -147,11 +149,6 @@ const Profile = () => {
                 business_name: profileData.business_name || null,
                 avatar_url: profileData.avatar_url || null,
                 whatsapp_connected: profileData.whatsapp_connected,
-                currency: profileData.currency,
-                default_interest_rate: Number(profileData.default_interest_rate),
-                late_fee_policy: profileData.late_fee_policy,
-                payment_qr_url: profileData.payment_qr_url,
-                payment_instructions: profileData.payment_instructions,
                 updated_at: new Date().toISOString(),
             };
 
@@ -469,7 +466,7 @@ const Profile = () => {
                             <CardHeader>
                                 <CardTitle>Estadísticas de Cuenta</CardTitle>
                                 <CardDescription>
-                                    Información sobre tu actividad en RapiCréditos
+                                    Información sobre tu actividad en Krédit
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SupportChat from "@/components/support/SupportChat";
-import AdsterraBanner from "@/components/ads/AdsterraBanner";
+import AdSlot from "@/components/ads/AdSlot";
+import AdPopup from "@/components/ads/AdPopup";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -31,12 +32,8 @@ const AdSpace = ({ position }: { position: "sidebar" | "banner" | "mobile" | "fi
 
   if (position === "sidebar") {
     return (
-      <div className="mx-4 mt-auto mb-4 p-4 rounded-xl bg-muted/50 border border-dashed border-muted flex flex-col items-center justify-center text-center gap-2 min-h-[150px]">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Insignia Pro</span>
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <span className="text-xs font-bold text-primary">AD</span>
-        </div>
-        <p className="text-[10px] text-muted-foreground">Tu anuncio aquí</p>
+      <div className="mx-3 mt-auto mb-4">
+        <AdSlot slot="sidebar" className="mx-auto" />
       </div>
     );
   }
@@ -44,34 +41,23 @@ const AdSpace = ({ position }: { position: "sidebar" | "banner" | "mobile" | "fi
   if (position === "banner") {
     return (
       <div className="w-full flex justify-center">
-        <AdsterraBanner
-          id="632988aee37de508a1cc0aa06bcd69c2"
-          height={90}
-          width={728}
-        />
+        <AdSlot slot="banner-top" />
       </div>
     );
   }
 
   if (position === "footer") {
     return (
-      <div className="w-full h-[90px] bg-muted/20 border-t border-dashed border-muted/50 flex flex-col items-center justify-center mt-12 mb-4">
-        <span className="text-[10px] text-muted-foreground uppercase opacity-50 mb-1">Publicidad de Pie de Página</span>
-        <div className="w-[728px] max-w-full h-[90px] flex items-center justify-center">
-          {/* Adsterra 728x90 */}
-          <div className="w-full h-full bg-primary/5 rounded-inner animate-pulse flex items-center justify-center text-[10px] text-muted-foreground">Banner 728x90</div>
-        </div>
+      <div className="w-full flex justify-center mt-10 mb-4">
+        <AdSlot slot="banner-bottom" />
       </div>
     );
   }
 
   if (position === "fixed-bottom") {
     return (
-      <div className="fixed bottom-0 left-0 w-full z-40 bg-background/80 backdrop-blur-sm border-t flex justify-center py-1 lg:hidden">
-        {/* Espacio para Banner Móvil 320x50 */}
-        <div className="w-[320px] h-[50px] bg-muted/20 animate-pulse flex items-center justify-center text-[8px] text-muted-foreground uppercase">
-          Publicidad
-        </div>
+      <div className="fixed bottom-0 left-0 w-full z-40 bg-background/90 backdrop-blur-sm border-t border-border flex justify-center py-1 lg:hidden">
+        <AdSlot slot="mobile-bottom" />
       </div>
     );
   }
@@ -183,7 +169,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               animate={{ opacity: isSidebarOpen ? 1 : 0, display: isSidebarOpen ? "block" : "none" }}
               className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70"
             >
-              RapiCréditos
+              Krédit
             </motion.span>
             {isSidebarOpen && (
               <motion.p
@@ -296,7 +282,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </Button>
 
           <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
-            RapiCréditos
+            Krédit
           </span>
 
           <div className="flex items-center gap-2">
@@ -325,7 +311,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           )}
 
           <div className="max-w-7xl mx-auto space-y-6 pb-4">
-            {children}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
             {/* Pie de Página Publicitario */}
             {!isPro && <AdSpace position="footer" />}
           </div>
@@ -334,6 +330,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <SupportChat />
       {!isPro && (
         <>
+          <AdPopup />
           <AdSpace position="fixed-bottom" />
         </>
       )}

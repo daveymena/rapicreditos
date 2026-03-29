@@ -1,7 +1,8 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Banknote, Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff } from "lucide-react";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +99,7 @@ const Register = () => {
             <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
               <Banknote className="w-7 h-7 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold text-foreground">RapiCréditos</span>
+            <span className="text-2xl font-bold text-foreground">Krédit</span>
           </Link>
 
           <div className="mb-8">

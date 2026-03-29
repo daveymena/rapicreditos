@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -376,7 +376,7 @@ const ClientOnboarding = () => {
                 <div className="text-center py-8">
                     <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
                         <ShieldCheck className="w-4 h-4 text-primary" />
-                        Tus datos viajan encriptados y seguros con RapiCréditos
+                        Tus datos viajan encriptados y seguros con Krédit
                     </div>
                 </div>
             </div>

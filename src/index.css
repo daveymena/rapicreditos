@@ -1,115 +1,92 @@
-/* RapiCréditos Design System - Fintech Professional Theme */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
+/* Krédit Design System - Fintech Professional Theme */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Core Brand Colors - Emerald & Gold */
-    --background: 160 20% 98%;
+    /* Fondo ligeramente opacado — no blanco puro */
+    --background: 160 10% 88%;
     --foreground: 160 30% 10%;
 
-    --card: 0 0% 100%;
+    --card: 0 0% 94%;
     --card-foreground: 160 30% 10%;
 
-    --popover: 0 0% 100%;
+    --popover: 0 0% 94%;
     --popover-foreground: 160 30% 10%;
 
-    /* Primary - Emerald Green */
     --primary: 158 64% 42%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 158 75% 55%;
     --primary-dark: 158 64% 32%;
 
-    /* Secondary - Slate with green tint */
     --secondary: 160 15% 93%;
     --secondary-foreground: 160 30% 15%;
 
-    /* Gold Accent */
     --accent: 43 96% 56%;
     --accent-foreground: 43 100% 15%;
     --accent-glow: 43 100% 65%;
 
-    /* Muted tones */
-    --muted: 160 15% 95%;
-    --muted-foreground: 160 10% 45%;
+    --muted: 160 10% 84%;
+    --muted-foreground: 160 10% 40%;
 
-    /* Status Colors */
     --success: 158 64% 42%;
     --success-foreground: 0 0% 100%;
-
     --warning: 43 96% 56%;
     --warning-foreground: 43 100% 15%;
-
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 20% 90%;
-    --input: 160 20% 90%;
+    --border: 160 15% 78%;
+    --input: 160 15% 80%;
     --ring: 158 64% 42%;
-
     --radius: 0.75rem;
 
-    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(158 64% 42%) 0%, hsl(158 75% 55%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(160 30% 8%) 0%, hsl(158 40% 15%) 50%, hsl(160 30% 8%) 100%);
     --gradient-gold: linear-gradient(135deg, hsl(43 96% 56%) 0%, hsl(43 100% 65%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(160 20% 98%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 99%) 0%, hsl(160 15% 96%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(160 30% 10% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(160 30% 10% / 0.1), 0 2px 4px -2px hsl(160 30% 10% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(160 30% 10% / 0.1), 0 4px 6px -4px hsl(160 30% 10% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(160 30% 10% / 0.1), 0 8px 10px -6px hsl(160 30% 10% / 0.1);
+    --shadow-sm: 0 1px 2px 0 hsl(160 30% 10% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(160 30% 10% / 0.1), 0 2px 4px -2px hsl(160 30% 10% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(160 30% 10% / 0.1), 0 4px 6px -4px hsl(160 30% 10% / 0.08);
+    --shadow-xl: 0 20px 25px -5px hsl(160 30% 10% / 0.1), 0 8px 10px -6px hsl(160 30% 10% / 0.08);
     --shadow-glow: 0 0 40px -10px hsl(158 64% 42% / 0.5);
     --shadow-gold: 0 0 30px -8px hsl(43 96% 56% / 0.4);
 
-    /* Sidebar */
-    --sidebar-background: 160 25% 97%;
+    --sidebar-background: 160 12% 85%;
     --sidebar-foreground: 160 30% 20%;
     --sidebar-primary: 158 64% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 20% 93%;
+    --sidebar-accent: 160 12% 80%;
     --sidebar-accent-foreground: 160 30% 15%;
-    --sidebar-border: 160 20% 90%;
+    --sidebar-border: 160 15% 76%;
     --sidebar-ring: 158 64% 42%;
   }
 
   .dark {
     --background: 160 30% 6%;
     --foreground: 160 10% 95%;
-
     --card: 160 25% 10%;
     --card-foreground: 160 10% 95%;
-
     --popover: 160 25% 10%;
     --popover-foreground: 160 10% 95%;
-
     --primary: 158 64% 52%;
     --primary-foreground: 160 30% 6%;
     --primary-glow: 158 75% 60%;
     --primary-dark: 158 64% 42%;
-
     --secondary: 160 20% 15%;
     --secondary-foreground: 160 10% 90%;
-
     --accent: 43 96% 56%;
     --accent-foreground: 43 100% 10%;
-
     --muted: 160 20% 15%;
     --muted-foreground: 160 10% 60%;
-
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 160 20% 18%;
     --input: 160 20% 18%;
     --ring: 158 64% 52%;
-
     --gradient-hero: linear-gradient(135deg, hsl(160 30% 4%) 0%, hsl(158 40% 10%) 50%, hsl(160 30% 4%) 100%);
-
     --sidebar-background: 160 25% 8%;
     --sidebar-foreground: 160 10% 90%;
     --sidebar-primary: 158 64% 52%;
@@ -330,4 +307,31 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary/50;
+}
+
+/* Feedback visual en clicks — todos los botones y links */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+button:active:not(:disabled), [role="button"]:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+/* Skeleton shimmer para loading states */
+.skeleton {
+  @apply bg-muted animate-pulse rounded-lg;
+}
+
+/* Page transition wrapper */
+.page-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }

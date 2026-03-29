@@ -90,6 +90,13 @@ const LoanDetail = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSavingPayment, setIsSavingPayment] = useState(false);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [showLateFeeDialog, setShowLateFeeDialog] = useState(false);
+    const [isSavingLateFee, setIsSavingLateFee] = useState(false);
+    const [lateFeeForm, setLateFeeForm] = useState({
+        amount: "",
+        reason: "",
+        days: ""
+    });
 
     // Payment form
     const [paymentForm, setPaymentForm] = useState({
@@ -225,6 +232,61 @@ const LoanDetail = () => {
         }
     };
 
+    const handleRegisterLateFee = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!loan) return;
+
+        const amount = parseFloat(lateFeeForm.amount);
+        if (isNaN(amount) || amount <= 0) {
+            toast.error("Monto inválido");
+            return;
+        }
+
+        setIsSavingLateFee(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Registrar la multa como un pago con late_fee
+            const { error: feeError } = await supabase.from("payments").insert({
+                loan_id: loan.id,
+                user_id: user.id,
+                amount: amount,
+                late_fee: amount,
+                payment_date: new Date().toISOString(),
+                payment_number: 0,
+                payment_method: "Multa por mora",
+                notes: lateFeeForm.reason || `Mora de ${lateFeeForm.days || "?"} días`,
+                due_date: new Date().toISOString()
+            });
+
+            if (feeError) throw feeError;
+
+            // Sumar la multa al saldo pendiente
+            const { error: loanUpdateError } = await supabase
+                .from("loans")
+                .update({
+                    remaining_amount: loan.remaining_amount + amount,
+                    total_amount: loan.total_amount + amount,
+                    status: "defaulted",
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", loan.id);
+
+            if (loanUpdateError) throw loanUpdateError;
+
+            toast.success(`Multa de ${formatCurrency(amount)} aplicada`);
+            setShowLateFeeDialog(false);
+            setLateFeeForm({ amount: "", reason: "", days: "" });
+            loadLoanData();
+            loadPayments();
+        } catch (error: any) {
+            toast.error(error.message || "Error al aplicar la multa");
+        } finally {
+            setIsSavingLateFee(false);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const configs: any = {
             active: { label: "Activo", variant: "default" },
@@ -246,7 +308,7 @@ const LoanDetail = () => {
 
             doc.setFont("courier", "bold");
             doc.setFontSize(14);
-            doc.text("RAPICREDITOS SAAS", 40, 15, { align: "center" });
+            doc.text("Kredit SAAS", 40, 15, { align: "center" });
 
             doc.setFontSize(10);
             doc.text("RECIBO DE CAJA", 40, 22, { align: "center" });
@@ -339,7 +401,7 @@ const LoanDetail = () => {
                     </div>
 
                     {/* Botones de Acción Rápidos */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <Button
                             variant="outline"
                             onClick={() => navigate(`/loans/${loan.id}/edit`)}
@@ -348,6 +410,76 @@ const LoanDetail = () => {
                             <Calendar className="mr-2 w-3.5 h-3.5" />
                             Ajustar
                         </Button>
+
+                        {/* Dialog Multa por Mora */}
+                        <Dialog open={showLateFeeDialog} onOpenChange={setShowLateFeeDialog}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full text-xs h-9 border-destructive/40 text-destructive hover:bg-destructive/5"
+                                    disabled={loan.status === 'completed'}
+                                >
+                                    <ShieldAlert className="mr-2 w-3.5 h-3.5" />
+                                    Multa
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="w-[92vw] max-w-md rounded-2xl p-4">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-destructive">
+                                        <ShieldAlert className="w-4 h-4" />
+                                        Aplicar Multa por Mora
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        El monto se sumará al saldo pendiente del cliente y el crédito pasará a estado "En Mora".
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleRegisterLateFee} className="space-y-4 pt-2">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Días de mora</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Ej: 15"
+                                            className="h-10"
+                                            value={lateFeeForm.days}
+                                            onChange={(e) => setLateFeeForm({ ...lateFeeForm, days: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Monto de la multa</Label>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                                required
+                                                type="number"
+                                                placeholder="0.00"
+                                                className="pl-9 h-10"
+                                                value={lateFeeForm.amount}
+                                                onChange={(e) => setLateFeeForm({ ...lateFeeForm, amount: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Motivo / Descripción</Label>
+                                        <Textarea
+                                            placeholder="Ej: Pago con 15 días de retraso..."
+                                            className="resize-none text-xs h-20"
+                                            value={lateFeeForm.reason}
+                                            onChange={(e) => setLateFeeForm({ ...lateFeeForm, reason: e.target.value })}
+                                        />
+                                    </div>
+                                    <DialogFooter className="pt-1">
+                                        <Button
+                                            type="submit"
+                                            className="w-full bg-destructive hover:bg-destructive/90 text-white"
+                                            disabled={isSavingLateFee}
+                                        >
+                                            {isSavingLateFee ? "Aplicando..." : "Confirmar Multa"}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
                         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
                             <DialogTrigger asChild>
                                 <Button className="w-full text-xs h-9 bg-gradient-primary" disabled={loan.status === 'completed'}>

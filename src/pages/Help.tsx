@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import {
     Book,
     FileText,
@@ -27,7 +27,7 @@ const Help = () => {
                         transition={{ duration: 0.5 }}
                     >
                         <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
-                            Centro de Ayuda RapiCréditos
+                            Centro de Ayuda Krédit
                         </h1>
                         <p className="text-muted-foreground text-lg max-w-2xl mx-auto mt-2">
                             Todo lo que necesitas saber para gestionar tus préstamos como un experto.
@@ -59,7 +59,7 @@ const Help = () => {
                         <TabsContent value="getting-started">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Primeros Pasos con RapiCréditos</CardTitle>
+                                    <CardTitle>Primeros Pasos con Krédit</CardTitle>
                                     <CardDescription>Configura tu cuenta y comienza a prestar en minutos.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">

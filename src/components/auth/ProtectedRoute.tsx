@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 export const ProtectedRoute = () => {
-    const { session, loading } = useAuth();
+    const { session, loading, isTrialExpired } = useAuth();
 
     if (loading) {
         return (
@@ -14,6 +14,10 @@ export const ProtectedRoute = () => {
 
     if (!session) {
         return <Navigate to="/login" replace />;
+    }
+
+    if (isTrialExpired) {
+        return <Navigate to="/pricing" replace />;
     }
 
     return <Outlet />;
