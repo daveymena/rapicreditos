@@ -1,33 +1,60 @@
-PORT=3000
-NODE_ENV=production
+# =====================================================
+# KRÉDIT — Variables de Entorno para EasyPanel
+# =====================================================
+# Copia cada bloque en el servicio correspondiente
+# en EasyPanel > tu-app > Environment Variables
+# =====================================================
 
-# --- SUPABASE (Tu Nuevo Proyecto) ---
-# Project ID
-VITE_SUPABASE_PROJECT_ID=skpzeubezfyzgoklbkji
-# Project URL
-VITE_SUPABASE_URL=https://skpzeubezfyzgoklbkji.supabase.co
-# Anon Key (Pública)
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrcHpldWJlemZ5emdva2xia2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTgxMzMsImV4cCI6MjA4NDc5NDEzM30.s6V1_7v-gBf-SaHboBiJVw7EAG_MR_wlKMDq-Zroyi4
 
-# --- IA & WHATSAPP ---
-OLLAMA_BASE_URL=https://ollama-ollama.ginee6.easypanel.host
-OLLAMA_MODEL=llama3.2:1b
-USE_LLM=true
-MIN_DELAY=5000
-MAX_DELAY=15000
-SESSION_NAME=rapicredi_auth_info
+# ─────────────────────────────────────────────────────
+# SERVICIO: frontend  (Vite / React)
+# ─────────────────────────────────────────────────────
+VITE_SUPABASE_URL=https://qsbkwtircttiJnjaxcmz.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmt3dGlyY3R0aWpuamF4Y216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MDU0NzIsImV4cCI6MjA5MDI4MTQ3Mn0.gRjd5knvqcaoUzu4jOJw7Za5sk3GE__ga1rkPI2VVpQ
+# URL pública de tu backend en EasyPanel (ajusta el dominio)
+VITE_BACKEND_URL=https://kredit-backend.TU_DOMINIO.easypanel.host
 
-# --- PAGOS ---
-MERCADO_PAGO_PUBLIC_KEY=APP_USR-23c2d74a-d01f-473e-a305-0e5999f023bc
-MERCADO_PAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453
+
+# ─────────────────────────────────────────────────────
+# SERVICIO: backend  (Node / Express)
+# ─────────────────────────────────────────────────────
+SUPABASE_URL=https://qsbkwtircttiJnjaxcmz.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmt3dGlyY3R0aWpuamF4Y216Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDcwNTQ3MiwiZXhwIjoyMDkwMjgxNDcyfQ.BxkNFntapIR6pzPGzDndibQgwspfwN-eyKZqz5mn_rA
+
+PORT=3001
+# URL del frontend en EasyPanel (para CORS)
+APP_URL=https://kredit.TU_DOMINIO.easypanel.host
+
+# IA — Groq (prioridad 1, más rápido)
+GROQ_API_KEY=                          # <-- pega tu key de console.groq.com
+GROQ_MODEL=llama-3.1-8b-instant
+
+# IA — Ollama / Open WebUI (prioridad 2, fallback)
+OLLAMA_BASE_URL=https://n8n-ollama.ginee6.easypanel.host
+OLLAMA_CHAT_MODEL=qwen2.5:0.5b
+OPENWEBUI_URL=https://n8n-ollama.ginee6.easypanel.host
+AI_PROVIDER=ollama
+AI_MODEL=llama3.2:1b
+AI_BASE_URL=https://n8n-ollama.ginee6.easypanel.host/api/generate
+
+# Pagos — MercadoPago (Colombia)
+MERCADOPAGO_PUBLIC_KEY=APP_USR-23c2d74a-d01f-473e-a305-0e5999f023bc
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453
+
+# Pagos — PayPal (Internacional)
 PAYPAL_CLIENT_ID=BAAtdQwVN8LvIoRstmHZWlo2ndcJBP8dFZdXLc8HJGdYUXstriO6mO0GJMZimkBCdZHotBkulELqeFm_R4
 PAYPAL_CLIENT_SECRET=EP5jZdzbUuHva4I8ERnbNYSHQ_BNe0niXQe91Bvf33Kl88nRKY-ivRx0_PGERS72JbjQSiMr63y9lEEL
 PAYPAL_MODE=live
 PAYPAL_API_URL=https://api-m.paypal.com
 
-# --- BASE DE DATOS BACKEND (Opcional si usas solo frontend) ---
-# Si quieres que el backend (Express) también se conecte a tu Supabase:
-# Reemplaza [PASSWORD] con la contraseña que creaste
-# DATABASE_URL=postgresql://postgres.skpzeubezfyzgoklbkji:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
-# Si no, deja la local de Easypanel:
-DATABASE_URL=postgresql://postgres:6715320D@164.68.122.5:5435/posgres-db?sslmode=disable
+
+# ─────────────────────────────────────────────────────
+# NOTAS IMPORTANTES
+# ─────────────────────────────────────────────────────
+# 1. Reemplaza TU_DOMINIO con el dominio real de EasyPanel
+# 2. GROQ_API_KEY es opcional pero mejora mucho la velocidad del chat IA
+#    Obtén una gratis en: https://console.groq.com
+# 3. El SUPABASE_SERVICE_ROLE_KEY es secreto — nunca lo expongas en el frontend
+# 4. Para el 2FA (TOTP), no se necesita variable extra — usa Supabase MFA
+#    Actívalo en: Supabase Dashboard > Authentication > MFA > Enable TOTP
+# =====================================================
