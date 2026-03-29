@@ -82,7 +82,7 @@ export default function WhatsAppPage() {
             toast.success('Sesión iniciada. Esperando QR...');
             // Intentar avisar al backend (opcional si el backend escucha cambios)
             try {
-                const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                const apiUrl = import.meta.env.VITE_API_URL || '';
                 await fetch(`${apiUrl}/api/sessions/${data[0].id}/restart`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -217,7 +217,7 @@ export default function WhatsAppPage() {
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                                                const apiUrl = import.meta.env.VITE_API_URL || '';
                                                 await fetch(`${apiUrl}/api/sessions/${session.id}/restart`, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
