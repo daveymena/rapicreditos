@@ -1,0 +1,50 @@
+{
+  "schema": "https://schema.easypanel.io/app.json",
+  "name": "repicreditosst",
+  "services": [
+    {
+      "type": "app",
+      "data": {
+        "projectName": "ollama",
+        "serviceName": "rapicredisas2",
+        "source": {
+          "type": "github",
+          "owner": "daveymena",
+          "repo": "repicreditosst",
+          "ref": "main",
+          "path": "/"
+        },
+        "build": {
+          "type": "dockerfile",
+          "file": "Dockerfile"
+        },
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        },
+        "env": "DATABASE_URL=postgres://postgres:6715320D@ollama_rapi-credi:5432/posgres-db\nJWT_SECRET=rapicredi_jwt_secret_2026_super_secure_key\nPORT=8080\nNODE_ENV=production\nAPP_URL=https://ollama-rapicredisas2.ginee6.easypanel.host\nOLLAMA_BASE_URL=https://n8n-ollama.ginee6.easypanel.host\nOLLAMA_CHAT_MODEL=qwen2.5:0.5b\nGROQ_API_KEY=\nGROQ_MODEL=llama-3.1-8b-instant\nMERCADOPAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453\nPAYPAL_CLIENT_ID=BAAtdQwVN8LvIoRstmHZWlo2ndcJBP8dFZdXLc8HJGdYUXstriO6mO0GJMZimkBCdZHotBkulELqeFm_R4\nPAYPAL_CLIENT_SECRET=EP5jZdzbUuHva4I8ERnbNYSHQ_BNe0niXQe91Bvf33Kl88nRKY-ivRx0_PGERS72JbjQSiMr63y9lEEL\nPAYPAL_MODE=live\nPAYPAL_API_URL=https://api-m.paypal.com",
+        "ports": [
+          {
+            "published": 8080,
+            "target": 8080
+          }
+        ],
+        "domains": [
+          {
+            "host": "ollama-rapicredisas2.ginee6.easypanel.host",
+            "port": 8080,
+            "https": true
+          }
+        ],
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "sessions",
+            "mountPath": "/app/sessions"
+          }
+        ]
+      }
+    }
+  ]
+}
