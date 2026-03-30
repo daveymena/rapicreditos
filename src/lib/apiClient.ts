@@ -1,7 +1,6 @@
-// Cliente HTTP para el backend propio (PostgreSQL)
-// En producción (EasyPanel) el frontend y backend corren en el mismo servidor
-// En dev, el proxy de Vite redirige /api -> localhost:3001
-const API_URL = import.meta.env.VITE_API_URL || '';
+// En producción frontend y backend corren juntos — rutas relativas
+// Las rutas ya incluyen /api/... así que API_URL debe ser vacío
+const API_URL = '';
 
 function getToken(): string | null {
   return localStorage.getItem('rc_token');
