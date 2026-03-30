@@ -1,6 +1,6 @@
-// En producción frontend y backend corren juntos — rutas relativas
-// Las rutas ya incluyen /api/... así que API_URL debe ser vacío
-const API_URL = '';
+// BASE siempre /api — frontend y backend en mismo servidor en producción
+// En dev, Vite proxy redirige /api -> localhost:3001
+const BASE = '/api';
 
 function getToken(): string | null {
   return localStorage.getItem('rc_token');
@@ -17,7 +17,8 @@ export function clearToken() {
 
 async function request<T>(method: string, path: string, body?: any): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${API_URL}${path}`, {
+  const url = `${BASE}${path}`;
+  const res = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -39,39 +40,39 @@ export const api = {
   patch: <T>(path: string, body: any) => request<T>('PATCH', path, body),
 };
 
-// Auth helpers
+// Auth — rutas SIN /api/ porque BASE ya lo tiene
 export const authApi = {
   register: (data: { email: string; password: string; full_name: string; business_name?: string; phone?: string }) =>
-    api.post<{ user: any; token: string }>('/api/auth/register', data),
+    api.post<{ user: any; token: string }>('/auth/register', data),
 
   login: (email: string, password: string) =>
-    api.post<{ user: any; token: string }>('/api/auth/login', { email, password }),
+    api.post<{ user: any; token: string }>('/auth/login', { email, password }),
 
-  me: () => api.get<{ user: any }>('/api/auth/me'),
+  me: () => api.get<{ user: any }>('/auth/me'),
 
-  updateProfile: (data: any) => api.put<{ user: any }>('/api/auth/profile', data),
+  updateProfile: (data: any) => api.put<{ user: any }>('/auth/profile', data),
 };
 
 // Clients
 export const clientsApi = {
-  list: () => api.get<any[]>('/api/clients'),
-  get: (id: string) => api.get<any>(`/api/clients/${id}`),
-  create: (data: any) => api.post<any>('/api/clients', data),
-  update: (id: string, data: any) => api.put<any>(`/api/clients/${id}`, data),
-  delete: (id: string) => api.delete<any>(`/api/clients/${id}`),
+  list: () => api.get<any[]>('/clients'),
+  get: (id: string) => api.get<any>(`/clients/${id}`),
+  create: (data: any) => api.post<any>('/clients', data),
+  update: (id: string, data: any) => api.put<any>(`/clients/${id}`, data),
+  delete: (id: string) => api.delete<any>(`/clients/${id}`),
 };
 
 // Loans
 export const loansApi = {
-  list: () => api.get<any[]>('/api/loans'),
-  get: (id: string) => api.get<any>(`/api/loans/${id}`),
-  create: (data: any) => api.post<any>('/api/loans', data),
-  update: (id: string, data: any) => api.put<any>(`/api/loans/${id}`, data),
-  payments: (loanId: string) => api.get<any[]>(`/api/loans/${loanId}/payments`),
-  addPayment: (loanId: string, data: any) => api.post<any>(`/api/loans/${loanId}/payments`, data),
+  list: () => api.get<any[]>('/loans'),
+  get: (id: string) => api.get<any>(`/loans/${id}`),
+  create: (data: any) => api.post<any>('/loans', data),
+  update: (id: string, data: any) => api.put<any>(`/loans/${id}`, data),
+  payments: (loanId: string) => api.get<any[]>(`/loans/${loanId}/payments`),
+  addPayment: (loanId: string, data: any) => api.post<any>(`/loans/${loanId}/payments`, data),
 };
 
 // Dashboard
 export const dashboardApi = {
-  stats: () => api.get<any>('/api/dashboard/stats'),
+  stats: () => api.get<any>('/dashboard/stats'),
 };
