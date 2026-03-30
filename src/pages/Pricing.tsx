@@ -49,7 +49,7 @@ const Pricing = () => {
     // Crear preferencia en el backend
     const createMercadoPagoPreference = async () => {
         try {
-            const data = await api.post<any>('/api/payments/create-preference', {
+            const data = await api.post<any>('/payments/create-preference', {
                 amount: 30000,
                 currency: 'COP',
                 description: 'Suscripción Krédit Pro - Mensual',
@@ -67,7 +67,7 @@ const Pricing = () => {
     const handlePayPalApprove = async (data: any, actions: any) => {
         return actions.order.capture().then(async (details: any) => {
             try {
-                const result = await api.post<any>('/api/payments/paypal-capture', { orderId: details.id });
+                const result = await api.post<any>('/payments/paypal-capture', { orderId: details.id });
                 if (result.success) {
                     toast.success('¡Pago completado! Plan Pro activado.');
                     setTimeout(() => window.location.reload(), 1500);

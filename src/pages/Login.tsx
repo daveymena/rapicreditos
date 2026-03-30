@@ -30,7 +30,8 @@ const Login = () => {
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
-      navigate("/dashboard");
+      // Recarga completa para que AuthContext tome el token del localStorage
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast({
         title: "Error",

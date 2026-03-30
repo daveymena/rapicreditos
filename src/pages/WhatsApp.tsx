@@ -31,7 +31,7 @@ const WhatsApp = () => {
         if (!user) return;
         setIsLoading(true);
         try {
-            const sessions = await api.get<any[]>('/api/whatsapp/sessions');
+            const sessions = await api.get<any[]>('/whatsapp/sessions');
             if (sessions && sessions.length > 0) {
                 const session = sessions[0];
                 setSessionId(session.id);
@@ -39,7 +39,7 @@ const WhatsApp = () => {
                 setIsConnected(session.status === 'connected');
                 if (session.qr_code) setQrCode(session.qr_code);
             } else {
-                const newSession = await api.post<any>('/api/whatsapp/sessions', {});
+                const newSession = await api.post<any>('/whatsapp/sessions', {});
                 if (newSession) setSessionId(newSession.id);
             }
         } catch (e) {
@@ -53,7 +53,7 @@ const WhatsApp = () => {
         if (!sessionId) return;
         const interval = setInterval(async () => {
             try {
-                const sessions = await api.get<any[]>('/api/whatsapp/sessions');
+                const sessions = await api.get<any[]>('/whatsapp/sessions');
                 const data = sessions?.find((s: any) => s.id === sessionId);
                 if (data) {
                     setConnectionStatus(data.status);
@@ -331,3 +331,4 @@ const WhatsApp = () => {
 };
 
 export default WhatsApp;
+

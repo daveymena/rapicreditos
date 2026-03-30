@@ -32,7 +32,7 @@ const Register = () => {
         title: "¡Cuenta creada!",
         description: "Tu cuenta ha sido creada exitosamente.",
       });
-      navigate("/dashboard");
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast({
         title: "Error",
