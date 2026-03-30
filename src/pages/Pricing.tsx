@@ -49,28 +49,39 @@ const Pricing = () => {
     // Crear preferencia en el backend
     const createMercadoPagoPreference = async () => {
         try {
+            // Obtener userId del localStorage
+            const rcUser = localStorage.getItem('rc_user');
+            const userId = rcUser ? JSON.parse(rcUser).id : null;
+
             const data = await api.post<any>('/payments/create-preference', {
                 amount: 30000,
                 currency: 'COP',
                 description: 'Suscripción Krédit Pro - Mensual',
+                userId,
             });
             if (data.preferenceId) {
                 setPreferenceId(data.preferenceId);
+                // Redirigir directamente al link de pago de MercadoPago
+                if (data.initPoint) {
+                    window.open(data.initPoint, '_blank');
+                }
                 toast.success('Link de pago generado');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating preference:', error);
-            toast.error('Error al generar el link de pago.');
+            toast.error('Error al generar el link de pago: ' + (error.message || 'Verifica la configuración de MercadoPago'));
         }
     };
 
     const handlePayPalApprove = async (data: any, actions: any) => {
         return actions.order.capture().then(async (details: any) => {
             try {
-                const result = await api.post<any>('/payments/paypal-capture', { orderId: details.id });
+                const rcUser = localStorage.getItem('rc_user');
+                const userId = rcUser ? JSON.parse(rcUser).id : null;
+                const result = await api.post<any>('/payments/paypal-capture', { orderId: details.id, userId });
                 if (result.success) {
                     toast.success('¡Pago completado! Plan Pro activado.');
-                    setTimeout(() => window.location.reload(), 1500);
+                    setTimeout(() => window.location.href = '/dashboard', 1500);
                 }
             } catch {
                 toast.error('Error al procesar el pago');
@@ -216,13 +227,12 @@ const Pricing = () => {
                                         <p className="text-xs text-center mb-2 text-muted-foreground flex items-center justify-center gap-1">
                                             <CreditCard className="w-3 h-3" /> Pagos seguros con MercadoPago
                                         </p>
-                                        {preferenceId ? (
-                                            <Wallet initialization={{ preferenceId }} />
-                                        ) : (
-                                            <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={createMercadoPagoPreference}>
-                                                Generar Link de Pago
-                                            </Button>
-                                        )}
+                                        <Button
+                                            className="w-full bg-[#009ee3] hover:bg-[#007ab8] text-white font-semibold"
+                                            onClick={createMercadoPagoPreference}
+                                        >
+                                            💳 Pagar con MercadoPago
+                                        </Button>
                                     </div>
                                 )}
 

@@ -32,6 +32,12 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '2mb' }));
 
+// Forzar UTF-8 en todas las respuestas JSON
+app.use((_req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 const activeSessions: { [key: string]: WhatsAppService } = {};
 const sessionLocks = new Set<string>();
 
@@ -357,27 +363,57 @@ app.post('/api/chat', async (req, res) => {
 
 // ─── PAYMENTS (MercadoPago / PayPal) ─────────────────────
 
-app.post('/api/payments/create-preference', authMiddleware, async (req: any, res) => {
-  const { amount, description } = req.body;
+// MercadoPago — sin authMiddleware para que funcione desde Pricing
+app.post('/api/payments/create-preference', async (req: any, res) => {
+  const { amount, description, userId } = req.body;
+
+  if (!MP_ACCESS_TOKEN) {
+    return res.status(503).json({ error: 'MercadoPago no configurado. Agrega MERCADOPAGO_ACCESS_TOKEN en las variables de entorno.' });
+  }
+
   try {
-    const origin = (req.headers.origin as string) || process.env.APP_URL || 'http://localhost:8080';
+    const appUrl = process.env.APP_URL || 'https://ollama-rapicredisas2.ginee6.easypanel.host';
     const body = {
-      items: [{ id: 'rapicredi-pro', title: description || 'Suscripción RapiCréditos Pro', quantity: 1, unit_price: Number(amount) || 30000 }],
+      items: [{
+        id: 'rapicredi-pro',
+        title: description || 'Suscripción RapiCréditos Pro',
+        quantity: 1,
+        unit_price: Number(amount) || 30000,
+        currency_id: 'COP',
+      }],
       back_urls: {
-        success: `${origin}/dashboard?payment=success`,
-        failure: `${origin}/pricing?payment=failed`,
-        pending: `${origin}/pricing?payment=pending`,
+        success: `${appUrl}/dashboard?payment=success`,
+        failure: `${appUrl}/pricing?payment=failed`,
+        pending: `${appUrl}/pricing?payment=pending`,
       },
-      external_reference: req.user.userId,
+      auto_return: 'approved',
+      external_reference: userId || 'unknown',
+      statement_descriptor: 'RapiCreditos Pro',
     };
+
     const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MP_ACCESS_TOKEN}` },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
+        'X-Idempotency-Key': `pref-${userId || 'anon'}-${Date.now()}`,
+      },
       body: JSON.stringify(body),
     });
+
     const data = await mpRes.json() as any;
-    res.json({ preferenceId: data.id, initPoint: data.init_point });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+
+    if (!mpRes.ok) {
+      console.error('[MP] Error API:', JSON.stringify(data));
+      return res.status(500).json({ error: data.message || 'Error en MercadoPago', detail: data });
+    }
+
+    console.log(`[MP] Preferencia creada: ${data.id}`);
+    res.json({ preferenceId: data.id, initPoint: data.init_point, sandboxInitPoint: data.sandbox_init_point });
+  } catch (e: any) {
+    console.error('[MP] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/payments/mp-webhook', async (req, res) => {
@@ -397,30 +433,48 @@ app.post('/api/payments/mp-webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
-app.post('/api/payments/paypal-create-order', authMiddleware, async (req: any, res) => {
+// PayPal — sin authMiddleware, userId viene en el body
+app.post('/api/payments/paypal-create-order', async (req: any, res) => {
+  const { userId } = req.body;
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
+    return res.status(503).json({ error: 'PayPal no configurado' });
+  }
   try {
     const tokenRes = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
       method: 'POST',
-      headers: { 'Authorization': `Basic ${Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: 'grant_type=client_credentials',
     });
     const { access_token } = await tokenRes.json() as any;
     const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${access_token}` },
-      body: JSON.stringify({ intent: 'CAPTURE', purchase_units: [{ description: 'RapiCréditos Pro', custom_id: req.user.userId, amount: { currency_code: 'USD', value: '7.00' } }] }),
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [{
+          description: 'RapiCréditos Pro - Mensual',
+          custom_id: userId || 'unknown',
+          amount: { currency_code: 'USD', value: '7.00' }
+        }]
+      }),
     });
     const order = await orderRes.json() as any;
     res.json({ orderId: order.id });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/payments/paypal-capture', authMiddleware, async (req: any, res) => {
-  const { orderId } = req.body;
+app.post('/api/payments/paypal-capture', async (req: any, res) => {
+  const { orderId, userId } = req.body;
   try {
     const tokenRes = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
       method: 'POST',
-      headers: { 'Authorization': `Basic ${Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: 'grant_type=client_credentials',
     });
     const { access_token } = await tokenRes.json() as any;
@@ -429,11 +483,12 @@ app.post('/api/payments/paypal-capture', authMiddleware, async (req: any, res) =
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${access_token}` },
     });
     const capture = await captureRes.json() as any;
-    if (capture.status === 'COMPLETED') {
-      await query('UPDATE public.users SET subscription_status=$1 WHERE id=$2', ['pro', req.user.userId]);
+    if (capture.status === 'COMPLETED' && userId) {
+      await query('UPDATE public.users SET subscription_status=$1 WHERE id=$2', ['pro', userId]);
+      console.log(`[PayPal] Plan Pro activado para: ${userId}`);
       return res.json({ success: true });
     }
-    res.json({ success: false });
+    res.json({ success: false, status: capture.status });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 

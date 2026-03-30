@@ -13,6 +13,11 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
+// Forzar UTF-8 en todas las conexiones
+pool.on('connect', (client) => {
+  client.query("SET client_encoding = 'UTF8'");
+});
+
 pool.on('error', (err) => {
   console.error('[DB] Error inesperado en pool:', err.message);
 });

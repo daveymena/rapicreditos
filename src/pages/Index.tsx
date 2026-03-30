@@ -9,14 +9,14 @@ import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 
 const Index = () => {
-  const { session, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && user) {
       navigate("/dashboard");
     }
-  }, [session, loading, navigate]);
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen">
