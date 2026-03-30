@@ -62,14 +62,14 @@ interface ProfileData {
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { user, refreshUser } = useAuth();
+    const { user, refreshUser, loading: authLoading } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     // MFA state (deshabilitado — no aplica con JWT propio)
     const [mfaEnabled] = useState(false);
-    const [showMfaSetup] = useState(false);
-    const [showMfaDisable] = useState(false);
+    const [showMfaSetup, setShowMfaSetup] = useState(false);
+    const [showMfaDisable, setShowMfaDisable] = useState(false);
     const [mfaQR] = useState("");
     const [mfaSecret] = useState("");
     const [mfaFactorId] = useState("");
@@ -106,9 +106,11 @@ const Profile = () => {
     });
 
     useEffect(() => {
-        loadProfile();
+        if (user) {
+            loadProfile();
+        }
         checkMfaStatus();
-    }, []);
+    }, [user]);
 
     const loadProfile = async () => {
         if (!user) { navigate("/login"); return; }
@@ -157,11 +159,26 @@ const Profile = () => {
             .slice(0, 2);
     };
 
-    if (isLoading) {
+    if (isLoading || authLoading) {
         return (
             <DashboardLayout>
                 <div className="flex items-center justify-center h-96">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    if (!user) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+                        <h2 className="text-xl font-bold mb-2">Error al cargar perfil</h2>
+                        <p className="text-muted-foreground mb-4">No se pudo cargar la información del usuario</p>
+                        <Button onClick={() => navigate("/dashboard")}>Volver al Dashboard</Button>
+                    </div>
                 </div>
             </DashboardLayout>
         );
