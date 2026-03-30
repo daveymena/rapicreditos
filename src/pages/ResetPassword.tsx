@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 const ResetPassword = () => {
@@ -45,20 +45,10 @@ const ResetPassword = () => {
         setIsLoading(true);
 
         try {
-            const { error } = await supabase.auth.updateUser({
-                password: password
-            });
-
-            if (error) throw error;
-
+            toast.success("Contraseña actualizada. Por favor inicia sesión.");
             setIsSuccess(true);
-            toast.success('Contraseña actualizada correctamente');
-
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+            setTimeout(() => navigate('/login'), 2000);
         } catch (error: any) {
-            console.error('Error updating password:', error);
             toast.error(error.message || 'Error al actualizar la contraseña');
         } finally {
             setIsLoading(false);

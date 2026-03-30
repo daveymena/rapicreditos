@@ -41,7 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi } from "@/lib/apiClient";
+import { useAuth } from "@/components/auth/AuthContext";
 import { toast } from "sonner";
 
 interface ProfileData {
@@ -61,82 +62,32 @@ interface ProfileData {
 
 const Profile = () => {
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(true);
+    const { user, refreshUser } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [userId, setUserId] = useState<string>("");
 
-    // MFA state
-    const [mfaEnabled, setMfaEnabled] = useState(false);
-    const [showMfaSetup, setShowMfaSetup] = useState(false);
-    const [showMfaDisable, setShowMfaDisable] = useState(false);
-    const [mfaQR, setMfaQR] = useState("");
-    const [mfaSecret, setMfaSecret] = useState("");
-    const [mfaFactorId, setMfaFactorId] = useState("");
+    // MFA state (deshabilitado — no aplica con JWT propio)
+    const [mfaEnabled] = useState(false);
+    const [showMfaSetup] = useState(false);
+    const [showMfaDisable] = useState(false);
+    const [mfaQR] = useState("");
+    const [mfaSecret] = useState("");
+    const [mfaFactorId] = useState("");
     const [mfaCode, setMfaCode] = useState("");
-    const [isMfaLoading, setIsMfaLoading] = useState(false);
+    const [isMfaLoading] = useState(false);
 
-    const checkMfaStatus = async () => {
-        const { data } = await supabase.auth.mfa.listFactors();
-        const totpFactor = data?.totp?.find(f => f.status === "verified");
-        setMfaEnabled(!!totpFactor);
-        if (totpFactor) setMfaFactorId(totpFactor.id);
-    };
+    const checkMfaStatus = async () => { /* MFA no disponible con JWT propio */ };
 
     const handleEnableMfa = async () => {
-        setIsMfaLoading(true);
-        try {
-            const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Krédit App" });
-            if (error) throw error;
-            setMfaFactorId(data.id);
-            setMfaQR(data.totp.qr_code);
-            setMfaSecret(data.totp.secret);
-            setShowMfaSetup(true);
-        } catch (e: any) {
-            toast.error(e.message || "Error al activar 2FA");
-        } finally {
-            setIsMfaLoading(false);
-        }
+        toast.error("2FA no disponible en esta versión");
     };
 
     const handleVerifyMfa = async () => {
-        if (mfaCode.length !== 6) return;
-        setIsMfaLoading(true);
-        try {
-            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
-            if (challengeError) throw challengeError;
-
-            const { error: verifyError } = await supabase.auth.mfa.verify({
-                factorId: mfaFactorId,
-                challengeId: challengeData.id,
-                code: mfaCode,
-            });
-            if (verifyError) throw verifyError;
-
-            setMfaEnabled(true);
-            setShowMfaSetup(false);
-            setMfaCode("");
-            toast.success("2FA activado correctamente");
-        } catch (e: any) {
-            toast.error("Código incorrecto. Intenta de nuevo.");
-        } finally {
-            setIsMfaLoading(false);
-        }
+        toast.error("2FA no disponible en esta versión");
     };
 
     const handleDisableMfa = async () => {
-        setIsMfaLoading(true);
-        try {
-            const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
-            if (error) throw error;
-            setMfaEnabled(false);
-            setMfaFactorId("");
-            setShowMfaDisable(false);
-            toast.success("2FA desactivado");
-        } catch (e: any) {
-            toast.error(e.message || "Error al desactivar 2FA");
-        } finally {
-            setIsMfaLoading(false);
-        }
+        toast.error("2FA no disponible en esta versión");
     };
 
     const [profileData, setProfileData] = useState<ProfileData>({
@@ -160,103 +111,38 @@ const Profile = () => {
     }, []);
 
     const loadProfile = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-
-            setUserId(user.id);
-
-            // Load profile data
-            const { data: profile, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("user_id", user.id)
-                .single();
-
-            if (error && error.code !== "PGRST116") {
-                throw error;
-            }
-
-            if (profile) {
-                const data = profile as any;
-                setProfileData({
-                    full_name: data.full_name || "",
-                    email: data.email || user.email || "",
-                    phone: data.phone || "",
-                    address: data.address || "",
-                    business_name: data.business_name || "",
-                    avatar_url: data.avatar_url || "",
-                    whatsapp_connected: data.whatsapp_connected || false,
-                    currency: data.currency || "COP",
-                    default_interest_rate: data.default_interest_rate || 20,
-                    late_fee_policy: data.late_fee_policy || "Los pagos atrasados generan un cargo adicional del 5% sobre el valor de la cuota.",
-                    payment_qr_url: data.payment_qr_url || "",
-                    payment_instructions: data.payment_instructions || "",
-                });
-            } else {
-                setProfileData({ ...profileData, email: user.email || "" });
-            }
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            toast.error("Error al cargar el perfil");
-        } finally {
-            setIsLoading(false);
-        }
+        if (!user) { navigate("/login"); return; }
+        setProfileData({
+            full_name: user.full_name || "",
+            email: user.email || "",
+            phone: user.phone || "",
+            address: user.address || "",
+            business_name: user.business_name || "",
+            avatar_url: user.avatar_url || "",
+            whatsapp_connected: user.whatsapp_connected || false,
+            currency: "COP",
+            default_interest_rate: 20,
+            late_fee_policy: "Los pagos atrasados generan un cargo adicional del 5% sobre el valor de la cuota.",
+            payment_qr_url: "",
+            payment_instructions: "",
+        });
     };
 
     const handleSave = async () => {
-        if (!profileData.full_name) {
-            toast.error("El nombre completo es requerido");
-            return;
-        }
-
+        if (!profileData.full_name) { toast.error("El nombre completo es requerido"); return; }
         setIsSaving(true);
-
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-
-            const { data: existingProfile } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("user_id", user.id)
-                .single();
-
-            const profilePayload = {
-                user_id: user.id,
+            await authApi.updateProfile({
                 full_name: profileData.full_name,
-                email: profileData.email,
+                business_name: profileData.business_name || null,
                 phone: profileData.phone || null,
                 address: profileData.address || null,
-                business_name: profileData.business_name || null,
                 avatar_url: profileData.avatar_url || null,
-                whatsapp_connected: profileData.whatsapp_connected,
-                updated_at: new Date().toISOString(),
-            };
-
-            const { error } = existingProfile
-                ? await supabase.from("profiles").update(profilePayload).eq("user_id", user.id)
-                : await supabase.from("profiles").insert([profilePayload]);
-
-            if (error) throw error;
-
-            toast.success("¡Perfil y configuración actualizados!");
-            loadProfile(); // Reload to sync
+            });
+            await refreshUser();
+            toast.success("¡Perfil actualizado!");
         } catch (error: any) {
-            console.error("Error saving profile:", error);
-            if (error.code === "PGRST204" || error.message?.includes("column")) {
-                toast.error("Error de base de datos: Faltan columnas en la tabla profiles. Por favor, ejecuta el script SQL de reparación en Supabase.", {
-                    duration: 6000,
-                });
-            } else {
-                toast.error("Error al guardar el perfil: " + (error.message || "Error desconocido"));
-            }
+            toast.error("Error al guardar el perfil: " + (error.message || "Error desconocido"));
         } finally {
             setIsSaving(false);
         }

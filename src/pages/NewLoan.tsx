@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { loansApi, clientsApi } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { calculateEndDate, generateSchedule, calculateLoanDetails, formatCurrency, Frequency, InterestType } from "@/lib/loanUtils";
 import {
@@ -85,36 +85,12 @@ const NewLoan = () => {
     }, [id]);
 
     const loadUserDefaults = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("default_interest_rate")
-                .eq("user_id", user.id)
-                .single();
-
-            if (profile) {
-                setFormData(prev => ({
-                    ...prev,
-                    interestRate: profile.default_interest_rate?.toString() || "20"
-                }));
-            }
-        } catch (error) {
-            console.error("Error loading user defaults:", error);
-        }
+        // defaults handled by backend
     };
 
     const loadLoanData = async () => {
         try {
-            const { data, error } = await supabase
-                .from("loans")
-                .select("*")
-                .eq("id", id)
-                .single();
-
-            if (error) throw error;
+            const data = await loansApi.get(id!);
             if (data) {
                 setFormData({
                     clientId: data.client_id,
@@ -124,7 +100,7 @@ const NewLoan = () => {
                     installments: data.installments?.toString() || "12",
                     frequency: (data.frequency as Frequency) || "monthly",
                     startDate: data.start_date,
-                    collectionStartDays: (data as any).collection_start_days?.toString() || "1",
+                    collectionStartDays: data.collection_start_days?.toString() || "1",
                     notes: data.notes || "",
                     status: data.status || "active"
                 });
@@ -157,21 +133,8 @@ const NewLoan = () => {
 
     const loadClients = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from("clients")
-                .select("id, full_name, phone")
-                .eq("user_id", user.id)
-                .eq("status", "active")
-                .order("full_name");
-
-            if (error) throw error;
-            setClients(data || []);
+            const data = await clientsApi.list();
+            setClients((data || []).filter((c: any) => c.status === 'active'));
         } catch (error) {
             console.error("Error loading clients:", error);
             toast.error("Error al cargar los clientes");
@@ -223,47 +186,30 @@ const NewLoan = () => {
         setIsLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-
             const loanData: any = {
-                user_id: user.id,
                 client_id: formData.clientId,
                 principal_amount: parseFloat(formData.principalAmount),
                 interest_rate: parseFloat(formData.interestRate),
                 interest_type: formData.interestType,
                 total_interest: calculation.totalInterest,
                 total_amount: calculation.totalAmount,
-                remaining_amount: id ? undefined : calculation.totalAmount,
                 installments: parseInt(formData.installments),
                 installment_amount: calculation.installmentAmount,
                 frequency: formData.frequency,
                 start_date: formData.startDate,
                 end_date: calculation.endDate,
-                collection_start_days: parseInt(formData.collectionStartDays) || 1,
                 notes: formData.notes || null,
             };
 
             if (id) {
-                const { error } = await supabase
-                    .from("loans")
-                    .update(loanData)
-                    .eq("id", id);
-                if (error) throw error;
+                await loansApi.update(id, loanData);
                 toast.success("¡Préstamo actualizado exitosamente!");
             } else {
-                // Generate loan number only for new loans
-                loanData.loan_number = `L-${Date.now().toString().slice(-8)}`;
                 loanData.paid_amount = 0;
                 loanData.paid_installments = 0;
                 loanData.remaining_amount = calculation.totalAmount;
                 loanData.status = "active";
-
-                const { error } = await supabase.from("loans").insert([loanData]);
-                if (error) throw error;
+                await loansApi.create(loanData);
                 toast.success("¡Préstamo creado exitosamente!");
             }
 

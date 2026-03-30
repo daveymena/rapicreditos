@@ -14,9 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthContext";
 import { toast } from "sonner";
+import { loansApi, clientsApi } from "@/lib/apiClient";
 import {
   AreaChart,
   Area,
@@ -60,37 +60,25 @@ const Dashboard = () => {
     try {
       if (!user) return;
 
-      // Load stats
-      const [clientsRes, loansRes] = await Promise.all([
-        supabase.from("clients").select("*", { count: "exact" }).eq("user_id", user.id),
-        supabase.from("loans").select("*").eq("user_id", user.id),
+      const [clients, loans] = await Promise.all([
+        clientsApi.list(),
+        loansApi.list(),
       ]);
 
-      const loans = loansRes.data || [];
-      const activeLoans = loans.filter(l => l.status === "active");
-      const overdueLoans = loans.filter(l => l.status === "defaulted");
+      const activeLoans = loans.filter((l: any) => l.status === "active");
+      const overdueLoans = loans.filter((l: any) => l.status === "defaulted");
 
       setStats({
-        totalCapital: activeLoans.reduce((sum, l) => sum + Number(l.remaining_amount || 0), 0),
-        totalClients: clientsRes.count || 0,
+        totalCapital: activeLoans.reduce((sum: number, l: any) => sum + Number(l.remaining_amount || 0), 0),
+        totalClients: clients.length,
         activeLoans: activeLoans.length,
         overdueLoans: overdueLoans.length,
-        totalEarnings: loans.reduce((sum, l) => sum + Number(l.paid_amount || 0), 0),
-        pendingPayments: activeLoans.reduce((sum, l) => sum + Number(l.remaining_amount || 0), 0),
+        totalEarnings: loans.reduce((sum: number, l: any) => sum + Number(l.paid_amount || 0), 0),
+        pendingPayments: activeLoans.reduce((sum: number, l: any) => sum + Number(l.remaining_amount || 0), 0),
       });
 
-      // Recent loans
-      const { data: recent } = await supabase
-        .from("loans")
-        .select(`
-          *,
-          clients (full_name, phone)
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      setRecentLoans(recent || []);
+      // Recent loans (ya los tenemos, tomamos los últimos 5)
+      setRecentLoans(loans.slice(0, 5));
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
@@ -268,8 +256,7 @@ const Dashboard = () => {
               <Button
                 variant="outline"
                 className="w-full justify-start h-14 hover:bg-primary/5 hover:border-primary border-primary/20 bg-primary/5"
-                onClick={async () => {
-                  const { data: { user } } = await supabase.auth.getUser();
+                onClick={() => {
                   if (user) {
                     const link = `${window.location.origin}/unirme/${user.id}`;
                     navigator.clipboard.writeText(link);

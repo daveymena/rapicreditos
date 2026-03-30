@@ -8,27 +8,23 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import path from 'path';
-import pino from 'pino';
-import { AIService } from './aiService.js';
-import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
+import pinoLib from 'pino';
+import { AIService } from './aiService.js';
+import { query } from './db.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pino = pinoLib as any;
 const logger = pino({ level: 'silent' });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class WhatsAppService {
     public sock: WASocket | null = null;
     private sessionId: string;
     private userId: string;
-    private supabase;
 
     constructor(sessionId: string, userId: string) {
         this.sessionId = sessionId;
         this.userId = userId;
-        this.supabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
     }
 
     async init() {
@@ -58,33 +54,30 @@ export class WhatsAppService {
 
             if (qr) {
                 console.log(`[WA] QR generado para ${this.sessionId}`);
-                await this.supabase
-                    .from('whatsapp_sessions')
-                    .update({ qr_code: qr, status: 'qr_ready' })
-                    .eq('id', this.sessionId);
+                await query(
+                    `UPDATE public.whatsapp_sessions SET qr_code=$1, status='qr_ready' WHERE id=$2`,
+                    [qr, this.sessionId]
+                );
             }
 
             if (connection === 'close') {
                 const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
                 const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-                await this.supabase
-                    .from('whatsapp_sessions')
-                    .update({ status: 'disconnected', qr_code: null })
-                    .eq('id', this.sessionId);
+                await query(
+                    `UPDATE public.whatsapp_sessions SET status='disconnected', qr_code=NULL WHERE id=$1`,
+                    [this.sessionId]
+                );
 
                 console.log(`[WA] Conexión cerrada para ${this.sessionId}. Motivo: ${statusCode}. Reconectando: ${shouldReconnect}`);
                 if (shouldReconnect) this.init();
+
             } else if (connection === 'open') {
                 console.log(`[WA] ✅ Sesión Conectada: ${this.sessionId}`);
-                await this.supabase
-                    .from('whatsapp_sessions')
-                    .update({
-                        status: 'connected',
-                        qr_code: null,
-                        last_connected_at: new Date().toISOString()
-                    })
-                    .eq('id', this.sessionId);
+                await query(
+                    `UPDATE public.whatsapp_sessions SET status='connected', qr_code=NULL, last_connected=$1 WHERE id=$2`,
+                    [new Date().toISOString(), this.sessionId]
+                );
             }
         });
 
@@ -98,95 +91,44 @@ export class WhatsAppService {
                 const body = msg.message.conversation || msg.message.extendedTextMessage?.text;
                 if (!body) continue;
 
-                // 1. Extraer teléfono del remitente
                 const senderPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@c.us', '');
-
-                // 2. Buscar cliente en la BD por teléfono (variantes con/sin código de país)
                 const phoneVariants = [
                     senderPhone,
                     senderPhone.replace(/^57/, ''),
                     `57${senderPhone}`,
                 ];
-                const { data: clientData } = await this.supabase
-                    .from('clients')
-                    .select(`
-                        id, full_name, phone, occupation, monthly_income,
-                        loans (
-                            id, loan_number, principal_amount, total_amount,
-                            remaining_amount, paid_amount, installment_amount,
-                            installments, paid_installments, frequency, status,
-                            start_date, end_date, interest_rate, collection_start_days
-                        )
-                    `)
-                    .eq('user_id', this.userId)
-                    .or(phoneVariants.map(p => `phone.ilike.%${p}%`).join(','))
-                    .limit(1)
-                    .single();
 
-                // 3. Construir contexto del cliente para la IA
+                // Buscar cliente con sus préstamos
+                const clientRes = await query(`
+                    SELECT c.*,
+                        (SELECT json_agg(l.*) FROM public.loans l WHERE l.client_id = c.id) as loans
+                    FROM public.clients c
+                    WHERE c.user_id = $1
+                      AND (c.phone ILIKE $2 OR c.phone ILIKE $3 OR c.phone ILIKE $4)
+                    LIMIT 1
+                `, [this.userId, `%${phoneVariants[0]}%`, `%${phoneVariants[1]}%`, `%${phoneVariants[2]}%`]);
+
+                const clientData = clientRes?.rows?.[0];
+
                 let clientContext = '';
                 if (clientData) {
-                    const activeLoans = (clientData.loans as any[])?.filter(l => l.status === 'active' || l.status === 'defaulted') || [];
-                    const completedLoans = (clientData.loans as any[])?.filter(l => l.status === 'completed') || [];
-
+                    const loans = (clientData.loans as any[]) || [];
+                    const activeLoans = loans.filter(l => l.status === 'active' || l.status === 'defaulted');
                     clientContext = `
-INFORMACIÓN DEL CLIENTE QUE ESCRIBE:
-- Nombre: ${clientData.full_name}
-- Teléfono: ${clientData.phone}
-- Ocupación: ${clientData.occupation || 'No registrada'}
-- Ingresos mensuales: ${clientData.monthly_income ? `$${Number(clientData.monthly_income).toLocaleString('es-CO')}` : 'No registrados'}
-
+CLIENTE: ${clientData.full_name} | Tel: ${clientData.phone}
 PRÉSTAMOS ACTIVOS (${activeLoans.length}):
-${activeLoans.length === 0 ? '- Sin préstamos activos.' : activeLoans.map(l => `
-  • Préstamo ${l.loan_number}
-    - Capital: $${Number(l.principal_amount).toLocaleString('es-CO')}
-    - Total a pagar: $${Number(l.total_amount).toLocaleString('es-CO')}
-    - Saldo pendiente: $${Number(l.remaining_amount).toLocaleString('es-CO')}
-    - Cuota: $${Number(l.installment_amount).toLocaleString('es-CO')} (${l.frequency})
-    - Cuotas pagadas: ${l.paid_installments} de ${l.installments}
-    - Tasa de interés: ${l.interest_rate}%
-    - Estado: ${l.status === 'defaulted' ? '⚠️ EN MORA' : '✅ Al día'}
-    - Vence: ${l.end_date}
-`).join('')}
-
-PRÉSTAMOS COMPLETADOS: ${completedLoans.length}
-`;
+${activeLoans.map(l => `• ${l.loan_number}: Saldo $${Number(l.remaining_amount).toLocaleString('es-CO')}, Cuota $${Number(l.installment_amount).toLocaleString('es-CO')} ${l.frequency}, ${l.paid_installments}/${l.installments} cuotas, Estado: ${l.status === 'defaulted' ? 'EN MORA' : 'Al día'}`).join('\n') || '- Sin préstamos activos'}`;
                 } else {
-                    clientContext = `NOTA: El número ${senderPhone} no está registrado como cliente en el sistema.`;
+                    clientContext = `NOTA: El número ${senderPhone} no está registrado como cliente.`;
                 }
 
-                // 4. Obtener prompt del agente o usar default de cobranza
-                const { data: session } = await this.supabase
-                    .from('whatsapp_sessions')
-                    .select('agent_id')
-                    .eq('id', this.sessionId)
-                    .single();
-
-                let basePrompt = `Eres un asistente de cobranza amable y profesional de Krédit.
+                const systemPrompt = `Eres un asistente de cobranza amable y profesional de Krédit.
 Ayudas a los clientes con consultas sobre sus préstamos, fechas de pago y saldos.
 Responde siempre en español, de forma breve y cordial. Máximo 3-4 oraciones.
 Usa los datos reales del cliente para dar respuestas precisas.
-Si el cliente pregunta su saldo, dile el monto exacto. Si pregunta su cuota, dísela.
-Si está en mora, recuérdale amablemente y pide que se ponga al día.`;
+Si está en mora, recuérdale amablemente y pide que se ponga al día.
 
-                let modelName = process.env.AI_PROVIDER === 'groq'
-                    ? (process.env.GROQ_MODEL || 'llama-3.1-8b-instant')
-                    : (process.env.AI_MODEL || 'qwen2.5:0.5b');
-
-                if (session?.agent_id) {
-                    const { data: agent } = await this.supabase
-                        .from('ai_agents')
-                        .select('system_prompt, model_name')
-                        .eq('id', session.agent_id)
-                        .single();
-                    if (agent) {
-                        basePrompt = agent.system_prompt;
-                        modelName = agent.model_name;
-                    }
-                }
-
-                // 5. Prompt final = base + contexto real del cliente
-                const systemPrompt = `${basePrompt}\n\n${clientContext}`;
+${clientContext}`;
 
                 await this.sock!.sendPresenceUpdate('composing', remoteJid);
                 await delay(1200);
@@ -196,45 +138,23 @@ Si está en mora, recuérdale amablemente y pide que se ponga al día.`;
                     body,
                     {
                         provider: process.env.AI_PROVIDER || 'ollama',
-                        model: modelName,
+                        model: process.env.AI_MODEL || 'qwen2.5:0.5b',
                         baseUrl: process.env.AI_BASE_URL || undefined
                     }
                 );
 
                 await this.sock!.sendMessage(remoteJid, { text: aiResponse });
 
-                // 6. Guardar en historial
-                const convId = await this.getOrCreateConversation(remoteJid, session?.agent_id || 'default');
-                await this.supabase.from('messages').insert([
-                    { conversation_id: convId, sender_type: 'client', content: body },
-                    { conversation_id: convId, sender_type: 'agent', content: aiResponse }
-                ]);
+                // Guardar mensajes
+                await query(
+                    `INSERT INTO public.messages (session_id, sender_type, content) VALUES ($1, 'client', $2)`,
+                    [this.sessionId, body]
+                );
+                await query(
+                    `INSERT INTO public.messages (session_id, sender_type, content) VALUES ($1, 'agent', $2)`,
+                    [this.sessionId, aiResponse]
+                );
             }
         });
-    }
-
-    private async getOrCreateConversation(customerPhone: string, agentId: string) {
-        const { data: conv } = await this.supabase
-            .from('conversations')
-            .select('id')
-            .eq('customer_phone', customerPhone)
-            .eq('user_id', this.userId)
-            .single();
-
-        if (conv) return conv.id;
-
-        const { data: newConv } = await this.supabase
-            .from('conversations')
-            .insert([{
-                user_id: this.userId,
-                session_id: this.sessionId,
-                customer_phone: customerPhone,
-                agent_id: agentId,
-                status: 'active'
-            }])
-            .select()
-            .single();
-
-        return newConv.id;
     }
 }

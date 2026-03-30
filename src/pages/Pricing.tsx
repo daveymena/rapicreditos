@@ -8,7 +8,7 @@ import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { useAuth } from "@/components/auth/AuthContext";
 
 // Inicializar MercadoPago dentro del componente o controlando errores
@@ -49,54 +49,31 @@ const Pricing = () => {
     // Crear preferencia en el backend
     const createMercadoPagoPreference = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const response = await fetch('/api/payments/create-preference', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: 30000,
-                    currency: 'COP',
-                    description: 'Suscripción Krédit Pro - Mensual',
-                    userId: user?.id,
-                })
+            const data = await api.post<any>('/api/payments/create-preference', {
+                amount: 30000,
+                currency: 'COP',
+                description: 'Suscripción Krédit Pro - Mensual',
             });
-
-            if (!response.ok) throw new Error('Backend no disponible');
-            const data = await response.json();
             if (data.preferenceId) {
                 setPreferenceId(data.preferenceId);
                 toast.success('Link de pago generado');
             }
         } catch (error) {
             console.error('Error creating preference:', error);
-            toast.error('Error al generar el link de pago. Verifica que el backend esté corriendo.');
+            toast.error('Error al generar el link de pago.');
         }
     };
 
     const handlePayPalApprove = async (data: any, actions: any) => {
-        const { data: { user } } = await supabase.auth.getUser();
         return actions.order.capture().then(async (details: any) => {
-            // Capturar via backend para activar Pro
             try {
-                const res = await fetch('/api/payments/paypal-capture', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: details.id, userId: user?.id })
-                });
-                const result = await res.json();
+                const result = await api.post<any>('/api/payments/paypal-capture', { orderId: details.id });
                 if (result.success) {
                     toast.success('¡Pago completado! Plan Pro activado.');
                     setTimeout(() => window.location.reload(), 1500);
                 }
             } catch {
-                // Fallback: actualizar directo en Supabase
-                if (user) {
-                    await supabase.from("profiles")
-                        .update({ subscription_status: "pro" })
-                        .eq("user_id", user.id);
-                    toast.success("¡Pago completado! Ahora eres Pro.");
-                    setTimeout(() => window.location.reload(), 1500);
-                }
+                toast.error('Error al procesar el pago');
             }
         });
     };

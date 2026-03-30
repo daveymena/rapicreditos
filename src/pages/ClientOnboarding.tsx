@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 const ClientOnboarding = () => {
@@ -57,17 +57,8 @@ const ClientOnboarding = () => {
     }, [formData.requested_amount, formData.installments, formData.frequency, lenderConfig]);
 
     const loadLenderConfig = async () => {
-        try {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("full_name, currency, default_interest_rate, late_fee_policy")
-                .eq("user_id", lenderId)
-                .single();
-            if (error) throw error;
-            setLenderConfig(data || { full_name: "tu asesor", currency: "COP", default_interest_rate: 20, late_fee_policy: "" });
-        } catch {
-            setLenderConfig({ full_name: "tu asesor", currency: "COP", default_interest_rate: 20, late_fee_policy: "" });
-        }
+        // Config pública del prestamista — usar defaults por ahora
+        setLenderConfig({ full_name: "tu asesor", currency: "COP", default_interest_rate: 20, late_fee_policy: "" });
     };
 
     const calculateLoan = () => {
@@ -89,29 +80,22 @@ const ClientOnboarding = () => {
 
         setIsLoading(true);
         try {
-            const { data: clientData, error: clientError } = await supabase
-                .from("clients")
-                .insert({
-                    user_id: lenderId,
-                    full_name: formData.full_name,
-                    document_type: formData.document_type,
-                    document_number: formData.document_number || null,
-                    phone: formData.phone,
-                    email: formData.email || null,
-                    address: formData.address || null,
-                    city: formData.city || null,
-                    occupation: formData.occupation || null,
-                    monthly_income: formData.monthly_income ? parseFloat(formData.monthly_income) : null,
-                    reference_name: formData.reference_name || null,
-                    reference_phone: formData.reference_phone || null,
-                    reference_relationship: formData.reference_relationship || null,
-                    notes: formData.notes || `Solicitud vía Link Web.`,
-                    status: "active",
-                })
-                .select()
-                .single();
-
-            if (clientError) throw clientError;
+            const clientData = await api.post<any>(`/api/clients`, {
+                full_name: formData.full_name,
+                document_type: formData.document_type,
+                document_number: formData.document_number || null,
+                phone: formData.phone,
+                email: formData.email || null,
+                address: formData.address || null,
+                city: formData.city || null,
+                occupation: formData.occupation || null,
+                monthly_income: formData.monthly_income ? parseFloat(formData.monthly_income) : null,
+                reference_name: formData.reference_name || null,
+                reference_phone: formData.reference_phone || null,
+                reference_relationship: formData.reference_relationship || null,
+                notes: formData.notes || `Solicitud vía Link Web.`,
+                status: "active",
+            });
 
             if (calculation) {
                 const endDateObj = new Date();
@@ -122,10 +106,8 @@ const ClientOnboarding = () => {
                     else if (formData.frequency === 'biweekly') endDateObj.setDate(endDateObj.getDate() + 15);
                     else endDateObj.setMonth(endDateObj.getMonth() + 1);
                 }
-                const { error: loanError } = await supabase.from("loans").insert({
-                    user_id: lenderId,
+                await api.post('/api/loans', {
                     client_id: clientData.id,
-                    loan_number: `REQ-${Date.now().toString().slice(-6)}`,
                     principal_amount: parseFloat(formData.requested_amount),
                     interest_rate: lenderConfig?.default_interest_rate || 20,
                     interest_type: "simple",
@@ -141,7 +123,6 @@ const ClientOnboarding = () => {
                     start_date: new Date().toISOString().split('T')[0],
                     end_date: endDateObj.toISOString().split('T')[0],
                 });
-                if (loanError) throw loanError;
             }
 
             setIsSuccess(true);

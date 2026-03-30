@@ -17,7 +17,7 @@ import {
   HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import SupportChat from "@/components/support/SupportChat";
 import AdSlot from "@/components/ads/AdSlot";
@@ -69,28 +69,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const { user, signOut, subscriptionStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("subscription_status")
-          .eq("user_id", user.id)
-          .single();
-
-        // Asumimos que si el status es 'pro' o 'active', se ocultan los anuncios
-        if (profile?.subscription_status === "pro" || profile?.subscription_status === "active") {
-          setIsPro(true);
-        }
-      }
-    };
-    checkSubscription();
-  }, []);
+    if (subscriptionStatus === "pro" || subscriptionStatus === "active") {
+      setIsPro(true);
+    }
+  }, [subscriptionStatus]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -109,13 +97,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión correctamente.",
-    });
-    navigate("/");
+  const handleLogout = () => {
+    signOut();
+    toast({ title: "Sesión cerrada", description: "Has cerrado sesión correctamente." });
   };
 
   const navItems = [

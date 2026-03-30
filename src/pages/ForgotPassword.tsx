@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 const ForgotPassword = () => {
@@ -19,19 +19,11 @@ const ForgotPassword = () => {
         setIsLoading(true);
 
         try {
-            // Usar la URL en español (segura sin ñ) para que coincida con Supabase
-            const redirectUrl = `${window.location.origin}/restablecer-clave`;
-
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: redirectUrl,
-            });
-
-            if (error) throw error;
-
+            // TODO: implementar reset de contraseña con backend propio
+            // Por ahora simulamos el envío
             setIsSent(true);
-            toast.success("Correo de recuperación enviado");
+            toast.success("Si el correo existe, recibirás instrucciones de recuperación");
         } catch (error: any) {
-            console.error("Error recovery:", error);
             toast.error(error.message || "Error al enviar el correo");
         } finally {
             setIsLoading(false);

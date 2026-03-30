@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Star, MessageSquare, TrendingUp, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthContext";
 
 const ADS = [
     {
@@ -58,27 +58,18 @@ const FIRST_DELAY = 30000;   // 30 segundos la primera vez
 const REPEAT_DELAY = 300000; // cada 5 minutos después
 
 const AdPopup = () => {
+    const { subscriptionStatus } = useAuth();
     const [visible, setVisible] = useState(false);
-    const [isPro, setIsPro] = useState(true); // empieza oculto hasta verificar
+    const [isPro, setIsPro] = useState(true);
     const [adIndex, setAdIndex] = useState(0);
     const [closeCount, setCloseCount] = useState(0);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const checkPro = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data } = await supabase
-                .from("profiles")
-                .select("subscription_status")
-                .eq("user_id", user.id)
-                .single();
-            const pro = data?.subscription_status === "pro" || data?.subscription_status === "active";
-            setIsPro(pro);
-            if (!pro) scheduleNext(FIRST_DELAY);
-        };
-        checkPro();
-    }, []);
+        const pro = subscriptionStatus === "pro" || subscriptionStatus === "active";
+        setIsPro(pro);
+        if (!pro) scheduleNext(FIRST_DELAY);
+    }, [subscriptionStatus]);
 
     const scheduleNext = (delay: number) => {
         setTimeout(() => {

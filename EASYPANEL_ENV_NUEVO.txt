@@ -1,0 +1,31 @@
+# =====================================================
+# Variables de entorno para EasyPanel - RapiCréditos
+# Copiar estas variables en la sección "Environment" del servicio
+# =====================================================
+
+DATABASE_URL=postgres://postgres:6715320D@ollama_rapi-credi:5432/posgres-db
+
+JWT_SECRET=rapicredi_jwt_secret_2026_super_secure_key_cambiar_en_prod
+
+PORT=8080
+NODE_ENV=production
+APP_URL=https://TU_DOMINIO_EASYPANEL.com
+
+# IA
+OLLAMA_BASE_URL=https://n8n-ollama.ginee6.easypanel.host
+OLLAMA_CHAT_MODEL=qwen2.5:0.5b
+OPENWEBUI_URL=https://n8n-ollama.ginee6.easypanel.host
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.1-8b-instant
+
+# MercadoPago (Colombia)
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453
+
+# PayPal (Internacional)
+PAYPAL_CLIENT_ID=BAAtdQwVN8LvIoRstmHZWlo2ndcJBP8dFZdXLc8HJGdYUXstriO6mO0GJMZimkBCdZHotBkulELqeFm_R4
+PAYPAL_CLIENT_SECRET=EP5jZdzbUuHva4I8ERnbNYSHQ_BNe0niXQe91Bvf33Kl88nRKY-ivRx0_PGERS72JbjQSiMr63y9lEEL
+PAYPAL_MODE=live
+PAYPAL_API_URL=https://api-m.paypal.com
+
+# NOTA: DATABASE_URL usa el host INTERNO de EasyPanel (ollama_rapi-credi:5432)
+# Para conexión externa usa: postgres://postgres:6715320D@164.68.122.5:5436/posgres-db

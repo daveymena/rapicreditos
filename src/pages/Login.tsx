@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, setToken } from "@/lib/apiClient";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -22,12 +22,9 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      const { user, token } = await authApi.login(email, password);
+      setToken(token);
+      localStorage.setItem("rc_user", JSON.stringify(user));
 
       toast({
         title: "¡Bienvenido!",

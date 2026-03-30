@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /clients
+Disallow: /loans
+
+Sitemap: https://ollama-rapiredissas.ginee6.easypanel.host/sitemap.xml

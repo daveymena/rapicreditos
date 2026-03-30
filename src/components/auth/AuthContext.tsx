@@ -1,93 +1,93 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { authApi, setToken, clearToken } from "@/lib/apiClient";
+
+interface AppUser {
+  id: string;
+  email: string;
+  full_name: string;
+  business_name?: string;
+  phone?: string;
+  address?: string;
+  avatar_url?: string;
+  subscription_status: string;
+  whatsapp_connected: boolean;
+  created_at: string;
+}
 
 interface AuthContextType {
-    session: Session | null;
-    user: User | null;
-    loading: boolean;
-    subscriptionStatus: string;
-    isTrialExpired: boolean;
-    signOut: () => Promise<void>;
+  user: AppUser | null;
+  loading: boolean;
+  subscriptionStatus: string;
+  isTrialExpired: boolean;
+  signOut: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
-    session: null,
-    user: null,
-    loading: true,
-    subscriptionStatus: "free",
-    isTrialExpired: false,
-    signOut: async () => { },
+  user: null,
+  loading: true,
+  subscriptionStatus: "free",
+  isTrialExpired: false,
+  signOut: () => {},
+  refreshUser: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [session, setSession] = useState<Session | null>(null);
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [subscriptionStatus, setSubscriptionStatus] = useState("free");
-    const [isTrialExpired, setIsTrialExpired] = useState(false);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState("free");
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
 
-    const loadProfile = async (userId: string) => {
-        try {
-            const { data } = await supabase
-                .from("profiles")
-                .select("subscription_status, created_at")
-                .eq("user_id", userId)
-                .single();
+  const applyUser = (u: AppUser) => {
+    setUser(u);
+    setSubscriptionStatus(u.subscription_status || "free");
+    if (u.subscription_status === "free") {
+      const diffDays = (Date.now() - new Date(u.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      setIsTrialExpired(diffDays > 7);
+    } else {
+      setIsTrialExpired(false);
+    }
+    localStorage.setItem("rc_user", JSON.stringify(u));
+  };
 
-            if (data) {
-                setSubscriptionStatus(data.subscription_status || "free");
+  const refreshUser = async () => {
+    try {
+      const { user: u } = await authApi.me();
+      applyUser(u);
+    } catch {
+      clearToken();
+      setUser(null);
+    }
+  };
 
-                // Calcular si el trial de 7 días expiró
-                if (data.subscription_status === "free") {
-                    const createdAt = new Date(data.created_at);
-                    const now = new Date();
-                    const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-                    setIsTrialExpired(diffDays > 7);
-                } else {
-                    setIsTrialExpired(false);
-                }
-            }
-        } catch (error) {
-            console.error("Error loading profile:", error);
-        }
-    };
+  useEffect(() => {
+    const token = localStorage.getItem("rc_token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    // Intentar cargar usuario desde cache primero
+    const cached = localStorage.getItem("rc_user");
+    if (cached) {
+      try { applyUser(JSON.parse(cached)); } catch {}
+    }
+    // Luego verificar con el servidor
+    refreshUser().finally(() => setLoading(false));
+  }, []);
 
-    useEffect(() => {
-        const initAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                setSession(session);
-                setUser(session?.user ?? null);
-                if (session?.user) await loadProfile(session.user.id);
-            } catch (error) {
-                console.error("Error checking auth session:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+  const signOut = () => {
+    clearToken();
+    setUser(null);
+    setSubscriptionStatus("free");
+    setIsTrialExpired(false);
+    window.location.href = "/login";
+  };
 
-        initAuth();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) await loadProfile(session.user.id);
-            setLoading(false);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const signOut = async () => {
-        await supabase.auth.signOut();
-    };
-
-    return (
-        <AuthContext.Provider value={{ session, user, loading, subscriptionStatus, isTrialExpired, signOut }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, loading, subscriptionStatus, isTrialExpired, signOut, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

@@ -39,7 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { loansApi } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 interface Loan {
@@ -115,20 +115,9 @@ const LoanDetail = () => {
 
     const loadLoanData = async () => {
         try {
-            const { data, error } = await supabase
-                .from("loans")
-                .select(`
-                    *,
-                    clients (id, full_name, phone, email)
-                `)
-                .eq("id", id)
-                .single();
-
-            if (error) throw error;
-            const loanData = data as any;
+            const loanData = await loansApi.get(id!);
             setLoan(loanData);
 
-            // Generate schedule for display
             const generatedSchedule = generateSchedule(
                 loanData.start_date,
                 loanData.frequency as Frequency,
@@ -138,13 +127,11 @@ const LoanDetail = () => {
             );
             setSchedule(generatedSchedule);
 
-            // Set suggested payment amount
             setPaymentForm(prev => ({
                 ...prev,
                 amount: loanData.installment_amount.toString(),
                 installmentNumber: (loanData.paid_installments + 1).toString()
             }));
-
         } catch (error) {
             console.error("Error loading loan:", error);
             toast.error("No se pudo cargar el préstamo");
@@ -155,13 +142,7 @@ const LoanDetail = () => {
 
     const loadPayments = async () => {
         try {
-            const { data, error } = await supabase
-                .from("payments")
-                .select("*")
-                .eq("loan_id", id)
-                .order("payment_date", { ascending: false });
-
-            if (error) throw error;
+            const data = await loansApi.payments(id!);
             setPayments(data || []);
         } catch (error) {
             console.error("Error loading payments:", error);
@@ -180,44 +161,16 @@ const LoanDetail = () => {
 
         setIsSavingPayment(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // 1. Register Payment
-            const { error: paymentError } = await supabase.from("payments").insert({
-                loan_id: loan.id,
-                user_id: user.id,
-                amount: amount,
-                payment_date: new Date().toISOString(),
+            await loansApi.addPayment(loan.id, {
+                amount,
+                payment_date: new Date().toISOString().split('T')[0],
                 payment_number: parseInt(paymentForm.installmentNumber) || (loan.paid_installments || 0) + 1,
                 payment_method: paymentForm.method,
                 notes: paymentForm.notes,
-                due_date: new Date().toISOString()
+                due_date: new Date().toISOString().split('T')[0],
             });
 
-            if (paymentError) throw paymentError;
-
-            // 2. Update Loan Status
-            const newPaidAmount = (loan.paid_amount || 0) + amount;
-            const newRemainingAmount = Math.max(0, loan.total_amount - newPaidAmount);
-
-            // If they paid exactly the installment amount or more, we count it as a paid installment
-            // For simplicity, we increment paid_installments
             const newPaidInstallments = (loan.paid_installments || 0) + 1;
-            const newStatus = newRemainingAmount <= 0 ? "completed" : "active";
-
-            const { error: loanUpdateError } = await supabase
-                .from("loans")
-                .update({
-                    paid_amount: newPaidAmount,
-                    remaining_amount: newRemainingAmount,
-                    paid_installments: newPaidInstallments,
-                    status: newStatus,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", loan.id);
-
-            if (loanUpdateError) throw loanUpdateError;
 
             toast.success("¡Pago registrado exitosamente!");
             setShowPaymentDialog(false);
@@ -244,36 +197,21 @@ const LoanDetail = () => {
 
         setIsSavingLateFee(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // Registrar la multa como un pago con late_fee
-            const { error: feeError } = await supabase.from("payments").insert({
-                loan_id: loan.id,
-                user_id: user.id,
-                amount: amount,
+            await loansApi.addPayment(loan.id, {
+                amount,
                 late_fee: amount,
-                payment_date: new Date().toISOString(),
+                payment_date: new Date().toISOString().split('T')[0],
                 payment_number: 0,
                 payment_method: "Multa por mora",
                 notes: lateFeeForm.reason || `Mora de ${lateFeeForm.days || "?"} días`,
-                due_date: new Date().toISOString()
+                due_date: new Date().toISOString().split('T')[0],
             });
 
-            if (feeError) throw feeError;
-
-            // Sumar la multa al saldo pendiente
-            const { error: loanUpdateError } = await supabase
-                .from("loans")
-                .update({
-                    remaining_amount: loan.remaining_amount + amount,
-                    total_amount: loan.total_amount + amount,
-                    status: "defaulted",
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", loan.id);
-
-            if (loanUpdateError) throw loanUpdateError;
+            await loansApi.update(loan.id, {
+                remaining_amount: loan.remaining_amount + amount,
+                total_amount: loan.total_amount + amount,
+                status: "defaulted",
+            });
 
             toast.success(`Multa de ${formatCurrency(amount)} aplicada`);
             setShowLateFeeDialog(false);

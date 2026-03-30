@@ -2,19 +2,18 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "target": "esnext",
-    "lib": ["esnext"],
-    "sourceMap": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "sourceMap": false,
     "declaration": false,
-    "noUncheckedIndexedAccess": false,
     "strict": true,
-    "jsx": "react-jsx",
-    "isolatedModules": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { loansApi } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 interface Loan {
@@ -76,23 +76,7 @@ const Loans = () => {
 
     const loadLoans = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from("loans")
-                .select(`
-          *,
-          clients (full_name, phone)
-        `)
-                .eq("user_id", user.id)
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
-
+            const data = await loansApi.list();
             setLoans(data || []);
         } catch (error) {
             console.error("Error loading loans:", error);
@@ -137,8 +121,7 @@ const Loans = () => {
         }
 
         try {
-            const { error } = await supabase.from("loans").delete().eq("id", id);
-            if (error) throw error;
+            await loansApi.update(id, { status: 'cancelled' });
             toast.success("Préstamo eliminado exitosamente");
             loadLoans();
         } catch (error) {

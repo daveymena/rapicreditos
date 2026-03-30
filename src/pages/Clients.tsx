@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { clientsApi } from "@/lib/apiClient";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,11 +50,7 @@ const Clients = () => {
     try {
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const { data, error } = await clientsApi.list().then(d => ({ data: d, error: null })).catch(e => ({ data: null, error: e }));
 
       if (error) throw error;
       setClients(data || []);
@@ -138,12 +134,6 @@ const Clients = () => {
         const text = e.target?.result as string;
         const lines = text.split(/\r?\n/);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast({ title: "Sesión expirada", description: "Por favor vuelve a iniciar sesión.", variant: "destructive" });
-          return;
-        }
-
         if (lines.length < 2) {
           toast({ title: "Archivo vacío", description: "El archivo no contiene datos válidos.", variant: "destructive" });
           return;
@@ -155,13 +145,10 @@ const Clients = () => {
 
         const clientsToImport = lines.slice(1)
           .filter(line => line.trim() !== "")
-          .map((line, idx) => {
+          .map((line) => {
             const values = line.split(separator).map(v => v.trim().replace(/^"|"$/g, ''));
-
             if (!values[0]) return null;
-
             return {
-              user_id: user.id,
               full_name: values[0],
               document_number: values[1] || "",
               phone: values[2] || "",
@@ -173,8 +160,9 @@ const Clients = () => {
           .filter(Boolean);
 
         if (clientsToImport.length > 0) {
-          const { error } = await supabase.from("clients").insert(clientsToImport);
-          if (error) throw error;
+          for (const c of clientsToImport) {
+            await clientsApi.create(c);
+          }
 
           toast({ title: "Importación completa", description: `Se han registrado ${clientsToImport.length} clientes.` });
           loadClients();

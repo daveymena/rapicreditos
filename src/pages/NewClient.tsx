@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { clientsApi } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 
 const NewClient = () => {
@@ -49,13 +49,7 @@ const NewClient = () => {
   const loadClientData = async () => {
     setIsFetching(true);
     try {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
+      const data = await clientsApi.get(id!);
       if (data) {
         setFormData({
           full_name: data.full_name || "",
@@ -89,14 +83,7 @@ const NewClient = () => {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
       const clientData = {
-        user_id: user.id,
         full_name: formData.full_name,
         document_type: formData.document_type,
         document_number: formData.document_number,
@@ -110,26 +97,13 @@ const NewClient = () => {
         reference_phone: formData.reference_phone || null,
         reference_relationship: formData.reference_relationship || null,
         notes: formData.notes || null,
-        updated_at: new Date().toISOString(),
       };
 
-      let error;
       if (id) {
-        // Modo Edición
-        const { error: updateError } = await supabase
-          .from("clients")
-          .update(clientData)
-          .eq("id", id);
-        error = updateError;
+        await clientsApi.update(id, clientData);
       } else {
-        // Modo Creación
-        const { error: insertError } = await supabase
-          .from("clients")
-          .insert(clientData);
-        error = insertError;
+        await clientsApi.create(clientData);
       }
-
-      if (error) throw error;
 
       toast({
         title: id ? "¡Cliente actualizado!" : "¡Cliente creado!",

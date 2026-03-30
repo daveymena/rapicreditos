@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi, setToken } from "@/lib/apiClient";
 
 const Register = () => {
   const [fullName, setFullName] = useState("");
@@ -24,34 +24,15 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone: phone,
-          },
-        },
+      const { user, token } = await authApi.register({ email, password, full_name: fullName, phone });
+      setToken(token);
+      localStorage.setItem("rc_user", JSON.stringify(user));
+
+      toast({
+        title: "¡Cuenta creada!",
+        description: "Tu cuenta ha sido creada exitosamente.",
       });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Create profile
-        await supabase.from("profiles").insert({
-          user_id: data.user.id,
-          full_name: fullName,
-          email: email,
-          phone: phone,
-        });
-
-        toast({
-          title: "¡Cuenta creada!",
-          description: "Tu cuenta ha sido creada exitosamente.",
-        });
-        navigate("/dashboard");
-      }
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",

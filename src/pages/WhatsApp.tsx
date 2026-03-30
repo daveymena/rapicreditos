@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { toast } from "sonner";
 import { QRCodeSVG } from 'qrcode.react';
-import { supabaseAny as supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
+import { useAuth } from "@/components/auth/AuthContext";
 
 const WhatsApp = () => {
+    const { user } = useAuth();
     const [isConnected, setIsConnected] = useState(false);
     const [qrCode, setQrCode] = useState("");
     const [connectionStatus, setConnectionStatus] = useState("disconnected");
@@ -23,66 +25,49 @@ const WhatsApp = () => {
 
     useEffect(() => {
         initSession();
-    }, []);
+    }, [user]);
 
     const initSession = async () => {
-        setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
-        const { data: sessions } = await supabase
-            .from('whatsapp_sessions')
-            .select('*')
-            .eq('user_id', user.id)
-            .limit(1);
-
-        if (sessions && sessions.length > 0) {
-            const session = sessions[0];
-            setSessionId(session.id);
-            setConnectionStatus(session.status);
-            setIsConnected(session.status === 'connected');
-            if (session.qr_code) setQrCode(session.qr_code);
-        } else {
-            const { data: newSession } = await supabase
-                .from('whatsapp_sessions')
-                .insert([{ user_id: user.id, session_name: 'Mi WhatsApp', status: 'disconnected' }])
-                .select()
-                .single();
-            if (newSession) setSessionId(newSession.id);
+        setIsLoading(true);
+        try {
+            const sessions = await api.get<any[]>('/api/whatsapp/sessions');
+            if (sessions && sessions.length > 0) {
+                const session = sessions[0];
+                setSessionId(session.id);
+                setConnectionStatus(session.status);
+                setIsConnected(session.status === 'connected');
+                if (session.qr_code) setQrCode(session.qr_code);
+            } else {
+                const newSession = await api.post<any>('/api/whatsapp/sessions', {});
+                if (newSession) setSessionId(newSession.id);
+            }
+        } catch (e) {
+            console.error('Error init session:', e);
         }
-
-        // Contar mensajes enviados
-        const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('sender_type', 'agent');
-        setMsgCount(count || 0);
-
         setIsLoading(false);
     };
 
-    // Realtime polling para QR y estado
+    // Polling para QR y estado
     useEffect(() => {
         if (!sessionId) return;
         const interval = setInterval(async () => {
-            const { data } = await supabase
-                .from('whatsapp_sessions')
-                .select('status, qr_code')
-                .eq('id', sessionId)
-                .single();
-
-            if (data) {
-                setConnectionStatus(data.status);
-                const connected = data.status === 'connected';
-                if (connected && !isConnected) {
-                    toast.success("¡WhatsApp conectado exitosamente!");
-                    setIsConnecting(false);
+            try {
+                const sessions = await api.get<any[]>('/api/whatsapp/sessions');
+                const data = sessions?.find((s: any) => s.id === sessionId);
+                if (data) {
+                    setConnectionStatus(data.status);
+                    const connected = data.status === 'connected';
+                    if (connected && !isConnected) {
+                        toast.success("¡WhatsApp conectado exitosamente!");
+                        setIsConnecting(false);
+                    }
+                    setIsConnected(connected);
+                    setQrCode(data.qr_code || '');
+                    if (data.qr_code && isConnecting) setIsConnecting(false);
                 }
-                setIsConnected(connected);
-                setQrCode(data.qr_code || '');
-                if (data.qr_code && isConnecting) setIsConnecting(false);
-            }
-        }, 2500);
+            } catch {}
+        }, 3000);
         return () => clearInterval(interval);
     }, [sessionId, isConnected, isConnecting]);
 
@@ -91,24 +76,18 @@ const WhatsApp = () => {
         setIsConnecting(true);
         toast.info("Iniciando Baileys, generando QR...");
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            await fetch(`/api/sessions/${sessionId}/restart`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user?.id })
-            });
+            await api.post(`/api/sessions/${sessionId}/restart`, { userId: user?.id });
         } catch {
-            // Backend puede no estar disponible localmente, el QR llegará igual via Supabase
+            // Backend puede no estar disponible localmente
         }
-        // Timeout de seguridad
         setTimeout(() => setIsConnecting(false), 20000);
     };
 
     const handleDisconnect = async () => {
         if (!sessionId) return;
-        await supabase.from('whatsapp_sessions')
-            .update({ status: 'disconnected', qr_code: null })
-            .eq('id', sessionId);
+        try {
+            await api.post(`/api/sessions/${sessionId}/restart`, { userId: user?.id });
+        } catch {}
         setIsConnected(false);
         setQrCode("");
         toast.info("Sesión desconectada");
