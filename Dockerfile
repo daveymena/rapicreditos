@@ -13,7 +13,8 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 # Variables de build del frontend
-ARG VITE_API_URL=/api
+# VITE_API_URL vacío = rutas relativas (/api/...) — correcto para producción
+ARG VITE_API_URL=
 ENV VITE_API_URL=${VITE_API_URL}
 
 RUN npm run build
