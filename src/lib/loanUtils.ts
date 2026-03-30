@@ -9,25 +9,21 @@ export interface Installment {
     isPaid: boolean;
 }
 
+const getFrequencyDays = (frequency: Frequency): number => {
+    switch (frequency) {
+        case 'daily': return 1;
+        case 'weekly': return 7;
+        case 'biweekly': return 15;
+        case 'monthly': return 30;
+        default: return 30;
+    }
+};
+
 export const calculateEndDate = (startDate: string, frequency: Frequency, installments: number): string => {
     const date = new Date(startDate);
+    const daysPerInstallment = getFrequencyDays(frequency);
 
-    for (let i = 0; i < installments; i++) {
-        switch (frequency) {
-            case 'daily':
-                date.setDate(date.getDate() + 1);
-                break;
-            case 'weekly':
-                date.setDate(date.getDate() + 7);
-                break;
-            case 'biweekly':
-                date.setDate(date.getDate() + 15);
-                break;
-            case 'monthly':
-                date.setMonth(date.getMonth() + 1);
-                break;
-        }
-    }
+    date.setDate(date.getDate() + (daysPerInstallment * installments));
 
     return date.toISOString().split('T')[0];
 };
@@ -41,22 +37,10 @@ export const generateSchedule = (
 ): Installment[] => {
     const schedule: Installment[] = [];
     const date = new Date(startDate);
+    const daysPerInstallment = getFrequencyDays(frequency);
 
     for (let i = 1; i <= installments; i++) {
-        switch (frequency) {
-            case 'daily':
-                date.setDate(date.getDate() + 1);
-                break;
-            case 'weekly':
-                date.setDate(date.getDate() + 7);
-                break;
-            case 'biweekly':
-                date.setDate(date.getDate() + 15);
-                break;
-            case 'monthly':
-                date.setMonth(date.getMonth() + 1);
-                break;
-        }
+        date.setDate(date.getDate() + daysPerInstallment);
 
         schedule.push({
             number: i,
@@ -76,22 +60,20 @@ export const calculateLoanDetails = (
     interestType: InterestType = 'simple'
 ) => {
     let totalInterest = 0;
+    let installmentAmount = 0;
+    let totalAmount = 0;
 
     if (interestType === 'simple') {
-        // En préstamos de consumo rápidos, a menudo el interés es un % fijo del capital inicial
-        // Pero técnicamente interés simple es P * r * t. 
-        // Vamos a usar la lógica comercial común: Tasa mensual aplicada al capital por el número de meses.
-        totalInterest = principal * (rate / 100);
+        totalInterest = principal * (rate / 100) * installments;
+        totalAmount = principal + totalInterest;
+        installmentAmount = totalAmount / installments;
     } else {
-        // Interés Compuesto / Francés (simplificado para el sistema de cuotas fijas)
-        const monthlyRate = rate / 100;
-        const compoundFactor = Math.pow(1 + monthlyRate, installments);
-        const totalAmount = principal * compoundFactor;
+        const periodicRate = rate / 100;
+        const compoundFactor = Math.pow(1 + periodicRate, installments);
+        totalAmount = principal * compoundFactor;
         totalInterest = totalAmount - principal;
+        installmentAmount = totalAmount / installments;
     }
-
-    const totalAmount = principal + totalInterest;
-    const installmentAmount = totalAmount / installments;
 
     return {
         totalInterest,

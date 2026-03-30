@@ -359,7 +359,7 @@ const Dashboard = () => {
                         </span>
                       </div>
                       <div>
-                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{loan.clients?.full_name}</p>
+                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{loan.clients?.full_name || loan.client_name}</p>
                         <p className="text-xs text-muted-foreground mb-3">{loan.loan_number}</p>
                         <div className="flex justify-between items-end">
                           <div>

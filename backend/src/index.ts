@@ -164,12 +164,19 @@ app.post('/api/loans', authMiddleware, async (req: any, res) => {
   const { client_id, principal_amount, interest_rate, interest_type, total_interest, total_amount,
     installments, installment_amount, frequency, start_date, end_date, remaining_amount, notes } = req.body;
   try {
+    const countResult = await query(
+      'SELECT COUNT(*) as count FROM public.loans WHERE user_id=$1',
+      [req.user.userId]
+    );
+    const loanCount = parseInt(countResult.rows[0].count) + 1;
+    const loanNumber = `CR-${Date.now().toString(36).toUpperCase()}-${loanCount.toString().padStart(4, '0')}`;
+
     const result = await query(
-      `INSERT INTO public.loans (user_id, client_id, principal_amount, interest_rate, interest_type,
+      `INSERT INTO public.loans (user_id, client_id, loan_number, principal_amount, interest_rate, interest_type,
         total_interest, total_amount, installments, installment_amount, frequency, start_date, end_date,
         remaining_amount, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-      [req.user.userId, client_id, principal_amount, interest_rate, interest_type || 'simple',
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+      [req.user.userId, client_id, loanNumber, principal_amount, interest_rate, interest_type || 'simple',
         total_interest, total_amount, installments, installment_amount, frequency,
         start_date, end_date, remaining_amount || total_amount, notes]
     );

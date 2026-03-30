@@ -11,6 +11,8 @@ interface AppUser {
   avatar_url?: string;
   subscription_status: string;
   whatsapp_connected: boolean;
+  payment_qr_url?: string;
+  payment_instructions?: string;
   created_at: string;
 }
 
@@ -20,7 +22,7 @@ interface AuthContextType {
   subscriptionStatus: string;
   isTrialExpired: boolean;
   signOut: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<AppUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,7 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   subscriptionStatus: "free",
   isTrialExpired: false,
   signOut: () => {},
-  refreshUser: async () => {},
+  refreshUser: async () => null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -53,10 +55,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshUser = async () => {
     try {
       const { user: u } = await authApi.me();
-      applyUser(u);
+      if (u) {
+        applyUser(u);
+        localStorage.setItem("rc_user", JSON.stringify(u));
+      }
+      return u;
     } catch {
       clearToken();
       setUser(null);
+      return null;
     }
   };
 

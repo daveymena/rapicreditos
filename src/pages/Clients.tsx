@@ -29,7 +29,22 @@ import { useAuth } from "@/components/auth/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface Client {
-  //... existing ...
+  id: string;
+  full_name: string;
+  document_number?: string;
+  document_type?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  occupation?: string;
+  monthly_income?: number;
+  status: string;
+  reference_name?: string;
+  reference_phone?: string;
+  reference_relationship?: string;
+  notes?: string;
+  created_at?: string;
 }
 
 const Clients = () => {
@@ -50,9 +65,7 @@ const Clients = () => {
     try {
       if (!user) return;
 
-      const { data, error } = await clientsApi.list().then(d => ({ data: d, error: null })).catch(e => ({ data: null, error: e }));
-
-      if (error) throw error;
+      const data = await clientsApi.list();
       setClients(data || []);
     } catch (error: any) {
       toast({

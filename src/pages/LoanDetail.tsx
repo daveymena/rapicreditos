@@ -12,7 +12,8 @@ import {
     Download,
     Phone,
     User,
-    TrendingUp
+    TrendingUp,
+    ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -59,12 +60,16 @@ interface Loan {
     start_date: string;
     end_date: string;
     notes: string;
-    clients: {
-        id: string;
+    client_id?: string;
+    clients?: {
+        id?: string;
         full_name: string;
         phone: string;
-        email: string;
+        email?: string;
     };
+    client_name?: string;
+    client_phone?: string;
+    client_email?: string;
 }
 
 interface Payment {
@@ -255,7 +260,7 @@ const LoanDetail = () => {
             doc.setFont("courier", "normal");
             doc.text(`Fecha: ${new Date(payment.payment_date).toLocaleDateString()}`, 10, 35);
             doc.text(`Credito: ${loan.loan_number}`, 10, 42);
-            doc.text(`Cliente: ${loan.clients?.full_name}`, 10, 49);
+            doc.text(`Cliente: ${loan.clients?.full_name || loan.client_name}`, 10, 49);
             doc.text(`Metodo: ${payment.payment_method}`, 10, 56);
 
             doc.setFontSize(16);
@@ -293,7 +298,7 @@ const LoanDetail = () => {
             doc.setFont("helvetica", "normal");
             doc.text(`Orden #: ${loan.loan_number}`, 105, 50, { align: "center" });
 
-            const text = `Se certifica que ${loan.clients?.full_name} ha cancelado la totalidad de sus obligaciones vinculadas al préstamo ${loan.loan_number}, por un monto total de ${formatCurrency(loan.total_amount)}.`;
+            const text = `Se certifica que ${loan.clients?.full_name || loan.client_name} ha cancelado la totalidad de sus obligaciones vinculadas al préstamo ${loan.loan_number}, por un monto total de ${formatCurrency(loan.total_amount)}.`;
 
             const splitText = doc.splitTextToSize(text, 170);
             doc.text(splitText, 20, 80);
@@ -334,7 +339,7 @@ const LoanDetail = () => {
                         </Button>
                         <div className="min-w-0">
                             <h1 className="text-xl font-bold truncate">Detalle de Crédito</h1>
-                            <p className="text-xs text-muted-foreground truncate">{loan.loan_number} • {loan.clients?.full_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{loan.loan_number} • {loan.clients?.full_name || loan.client_name}</p>
                         </div>
                     </div>
 
@@ -558,13 +563,13 @@ const LoanDetail = () => {
                                         <User className="w-5 h-5" />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="font-bold text-sm truncate">{loan.clients?.full_name}</p>
-                                        <p className="text-[10px] text-muted-foreground">{loan.clients?.phone}</p>
+                                        <p className="font-bold text-sm truncate">{loan.clients?.full_name || loan.client_name}</p>
+                                        <p className="text-[10px] text-muted-foreground">{loan.clients?.phone || loan.client_phone}</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" size="sm" className="text-[10px] h-8" onClick={() => navigate(`/clients/${loan.clients?.id}`)}>Perfil</Button>
-                                    <Button variant="outline" size="sm" className="text-[10px] h-8 bg-success/5 border-success/20 text-success" onClick={() => window.open(`https://wa.me/${loan.clients?.phone.replace(/\D/g, '')}`, '_blank')}>WhatsApp</Button>
+                                    <Button variant="outline" size="sm" className="text-[10px] h-8" onClick={() => navigate(`/clients/${loan.clients?.id || loan.client_id}`)}>Perfil</Button>
+                                    <Button variant="outline" size="sm" className="text-[10px] h-8 bg-success/5 border-success/20 text-success" onClick={() => window.open(`https://wa.me/${(loan.clients?.phone || loan.client_phone || '').replace(/\D/g, '')}`, '_blank')}>WhatsApp</Button>
                                 </div>
                             </CardContent>
                         </Card>

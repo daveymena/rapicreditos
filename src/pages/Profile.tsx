@@ -15,13 +15,8 @@ import {
     MessageSquare,
     Shield,
     Bell,
-    DollarSign,
-    Percent,
     CreditCard,
     X,
-    ShieldCheck,
-    ShieldOff,
-    QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,15 +26,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { authApi } from "@/lib/apiClient";
 import { useAuth } from "@/components/auth/AuthContext";
@@ -53,9 +39,6 @@ interface ProfileData {
     business_name: string;
     avatar_url: string;
     whatsapp_connected: boolean;
-    currency: string;
-    default_interest_rate: number;
-    late_fee_policy: string;
     payment_qr_url: string;
     payment_instructions: string;
 }
@@ -63,32 +46,7 @@ interface ProfileData {
 const Profile = () => {
     const navigate = useNavigate();
     const { user, refreshUser, loading: authLoading } = useAuth();
-    const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
-    // MFA state (deshabilitado — no aplica con JWT propio)
-    const [mfaEnabled] = useState(false);
-    const [showMfaSetup, setShowMfaSetup] = useState(false);
-    const [showMfaDisable, setShowMfaDisable] = useState(false);
-    const [mfaQR] = useState("");
-    const [mfaSecret] = useState("");
-    const [mfaFactorId] = useState("");
-    const [mfaCode, setMfaCode] = useState("");
-    const [isMfaLoading] = useState(false);
-
-    const checkMfaStatus = async () => { /* MFA no disponible con JWT propio */ };
-
-    const handleEnableMfa = async () => {
-        toast.error("2FA no disponible en esta versión");
-    };
-
-    const handleVerifyMfa = async () => {
-        toast.error("2FA no disponible en esta versión");
-    };
-
-    const handleDisableMfa = async () => {
-        toast.error("2FA no disponible en esta versión");
-    };
 
     const [profileData, setProfileData] = useState<ProfileData>({
         full_name: "",
@@ -98,40 +56,31 @@ const Profile = () => {
         business_name: "",
         avatar_url: "",
         whatsapp_connected: false,
-        currency: "COP",
-        default_interest_rate: 20,
-        late_fee_policy: "Los pagos atrasados generan un cargo adicional del 5% sobre el valor de la cuota.",
         payment_qr_url: "",
         payment_instructions: "",
     });
 
     useEffect(() => {
         if (user) {
-            loadProfile();
+            setProfileData({
+                full_name: user.full_name || "",
+                email: user.email || "",
+                phone: user.phone || "",
+                address: user.address || "",
+                business_name: user.business_name || "",
+                avatar_url: user.avatar_url || "",
+                whatsapp_connected: user.whatsapp_connected || false,
+                payment_qr_url: "",
+                payment_instructions: "",
+            });
         }
-        checkMfaStatus();
     }, [user]);
 
-    const loadProfile = async () => {
-        if (!user) { navigate("/login"); return; }
-        setProfileData({
-            full_name: user.full_name || "",
-            email: user.email || "",
-            phone: user.phone || "",
-            address: user.address || "",
-            business_name: user.business_name || "",
-            avatar_url: user.avatar_url || "",
-            whatsapp_connected: user.whatsapp_connected || false,
-            currency: "COP",
-            default_interest_rate: 20,
-            late_fee_policy: "Los pagos atrasados generan un cargo adicional del 5% sobre el valor de la cuota.",
-            payment_qr_url: "",
-            payment_instructions: "",
-        });
-    };
-
     const handleSave = async () => {
-        if (!profileData.full_name) { toast.error("El nombre completo es requerido"); return; }
+        if (!profileData.full_name) { 
+            toast.error("El nombre completo es requerido"); 
+            return; 
+        }
         setIsSaving(true);
         try {
             await authApi.updateProfile({
@@ -144,13 +93,14 @@ const Profile = () => {
             await refreshUser();
             toast.success("¡Perfil actualizado!");
         } catch (error: any) {
-            toast.error("Error al guardar el perfil: " + (error.message || "Error desconocido"));
+            toast.error("Error al guardar el perfil");
         } finally {
             setIsSaving(false);
         }
     };
 
     const getInitials = (name: string) => {
+        if (!name) return "U";
         return name
             .split(" ")
             .map((n) => n[0])
@@ -159,7 +109,7 @@ const Profile = () => {
             .slice(0, 2);
     };
 
-    if (isLoading || authLoading) {
+    if (authLoading) {
         return (
             <DashboardLayout>
                 <div className="flex items-center justify-center h-96">
@@ -210,7 +160,7 @@ const Profile = () => {
                                     <Avatar className="w-32 h-32">
                                         <AvatarImage src={profileData.avatar_url} />
                                         <AvatarFallback className="text-2xl bg-gradient-primary text-primary-foreground">
-                                            {profileData.full_name ? getInitials(profileData.full_name) : "RC"}
+                                            {getInitials(profileData.full_name)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <Button variant="outline" size="sm" disabled>
@@ -244,94 +194,6 @@ const Profile = () => {
                                             }
                                         />
                                     </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                                                <Shield className="w-5 h-5 text-success" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm">Autenticación 2FA</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {mfaEnabled ? "Activado — Google Authenticator / Authy" : "Desactivado"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant={mfaEnabled ? "destructive" : "outline"}
-                                            size="sm"
-                                            className="text-xs h-8"
-                                            onClick={() => mfaEnabled ? setShowMfaDisable(true) : handleEnableMfa()}
-                                            disabled={isMfaLoading}
-                                        >
-                                            {isMfaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : mfaEnabled ? <><ShieldOff className="w-3 h-3 mr-1" />Desactivar</> : <><ShieldCheck className="w-3 h-3 mr-1" />Activar</>}
-                                        </Button>
-                                    </div>
-
-                                    {/* Dialog: Setup MFA */}
-                                    <Dialog open={showMfaSetup} onOpenChange={setShowMfaSetup}>
-                                        <DialogContent className="w-[92vw] max-w-sm rounded-2xl">
-                                            <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2">
-                                                    <QrCode className="w-5 h-5 text-primary" />
-                                                    Activar Autenticación 2FA
-                                                </DialogTitle>
-                                                <DialogDescription>
-                                                    Escanea el código QR con Google Authenticator o Authy, luego ingresa el código de 6 dígitos.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <div className="flex flex-col items-center gap-4 py-2">
-                                                {mfaQR && (
-                                                    <img src={mfaQR} alt="QR 2FA" className="w-44 h-44 rounded-xl border p-2 bg-white" />
-                                                )}
-                                                <div className="text-center">
-                                                    <p className="text-xs text-muted-foreground mb-1">O ingresa la clave manual:</p>
-                                                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all">{mfaSecret}</code>
-                                                </div>
-                                                <div className="w-full space-y-2">
-                                                    <Label className="text-xs">Código de verificación</Label>
-                                                    <InputOTP maxLength={6} value={mfaCode} onChange={setMfaCode}>
-                                                        <InputOTPGroup>
-                                                            <InputOTPSlot index={0} />
-                                                            <InputOTPSlot index={1} />
-                                                            <InputOTPSlot index={2} />
-                                                            <InputOTPSlot index={3} />
-                                                            <InputOTPSlot index={4} />
-                                                            <InputOTPSlot index={5} />
-                                                        </InputOTPGroup>
-                                                    </InputOTP>
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <Button className="w-full" onClick={handleVerifyMfa} disabled={mfaCode.length !== 6 || isMfaLoading}>
-                                                    {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                                                    Confirmar y Activar
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-
-                                    {/* Dialog: Disable MFA */}
-                                    <Dialog open={showMfaDisable} onOpenChange={setShowMfaDisable}>
-                                        <DialogContent className="w-[92vw] max-w-sm rounded-2xl">
-                                            <DialogHeader>
-                                                <DialogTitle className="text-destructive flex items-center gap-2">
-                                                    <ShieldOff className="w-5 h-5" />
-                                                    Desactivar 2FA
-                                                </DialogTitle>
-                                                <DialogDescription>
-                                                    ¿Estás seguro? Tu cuenta quedará menos protegida.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <DialogFooter className="gap-2">
-                                                <Button variant="outline" onClick={() => setShowMfaDisable(false)}>Cancelar</Button>
-                                                <Button variant="destructive" onClick={handleDisableMfa} disabled={isMfaLoading}>
-                                                    {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                                    Sí, desactivar
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
 
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -390,9 +252,6 @@ const Profile = () => {
                                                 type="email"
                                                 placeholder="correo@ejemplo.com"
                                                 value={profileData.email}
-                                                onChange={(e) =>
-                                                    setProfileData({ ...profileData, email: e.target.value })
-                                                }
                                                 className="pl-10"
                                                 disabled
                                             />
@@ -566,7 +425,7 @@ const Profile = () => {
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Miembro desde</p>
                                                 <p className="text-lg font-bold text-foreground">
-                                                    {new Date().toLocaleDateString("es-CO", { month: "short", year: "numeric" })}
+                                                    {new Date(user.created_at).toLocaleDateString("es-CO", { month: "short", year: "numeric" })}
                                                 </p>
                                             </div>
                                         </div>
@@ -584,7 +443,9 @@ const Profile = () => {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Plan</p>
-                                                <p className="text-lg font-bold text-foreground">Premium</p>
+                                                <p className="text-lg font-bold text-foreground">
+                                                    {user.subscription_status === "pro" ? "Premium" : "Gratis"}
+                                                </p>
                                             </div>
                                         </div>
                                     </motion.div>

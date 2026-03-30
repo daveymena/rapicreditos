@@ -74,19 +74,22 @@ const WhatsApp = () => {
     const handleConnect = async () => {
         if (!sessionId) return;
         setIsConnecting(true);
+        setQrCode("");
         toast.info("Iniciando Baileys, generando QR...");
         try {
-            await api.post(`/api/sessions/${sessionId}/restart`, { userId: user?.id });
-        } catch {
-            // Backend puede no estar disponible localmente
+            await api.post(`/sessions/${sessionId}/restart`, { userId: user?.id });
+        } catch (e) {
+            console.error('Error connecting:', e);
         }
-        setTimeout(() => setIsConnecting(false), 20000);
+        setTimeout(() => {
+            setIsConnecting(false);
+        }, 20000);
     };
 
     const handleDisconnect = async () => {
         if (!sessionId) return;
         try {
-            await api.post(`/api/sessions/${sessionId}/restart`, { userId: user?.id });
+            await api.post(`/sessions/${sessionId}/restart`, { userId: user?.id });
         } catch {}
         setIsConnected(false);
         setQrCode("");

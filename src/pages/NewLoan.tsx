@@ -262,30 +262,32 @@ const NewLoan = () => {
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="clientSearch">Buscar Cliente *</Label>
-                                        <Select
-                                            value={formData.clientId}
-                                            onValueChange={(value) => {
-                                                setFormData({ ...formData, clientId: value });
-                                            }}
-                                        >
-                                            <SelectTrigger id="clientSelect" className="pl-10 h-10 w-full">
-                                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                                <SelectValue placeholder="Selecciona un cliente de la lista" />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[300px]">
-                                                {clients.length > 0 ? (
-                                                    clients.map((client) => (
-                                                        <SelectItem key={client.id} value={client.id}>
-                                                            {client.full_name} - {client.phone}
-                                                        </SelectItem>
-                                                    ))
-                                                ) : (
-                                                    <div className="p-2 text-sm text-muted-foreground text-center">
-                                                        No hay clientes activos.
-                                                    </div>
-                                                )}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="relative">
+                                            <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 z-10 pointer-events-none" />
+                                            <Select
+                                                value={formData.clientId}
+                                                onValueChange={(value) => {
+                                                    setFormData({ ...formData, clientId: value });
+                                                }}
+                                            >
+                                                <SelectTrigger id="clientSelect" className="pl-10 h-10 w-full">
+                                                    <SelectValue placeholder="Selecciona un cliente de la lista" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[300px]">
+                                                    {clients.length > 0 ? (
+                                                        clients.map((client) => (
+                                                            <SelectItem key={client.id} value={client.id}>
+                                                                {client.full_name} - {client.phone}
+                                                            </SelectItem>
+                                                        ))
+                                                    ) : (
+                                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                                            No hay clientes activos.
+                                                        </div>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                         {formData.clientId && (
                                             <p className="text-xs text-green-600 flex items-center mt-1">
                                                 <CheckCircle className="w-3 h-3 mr-1" />

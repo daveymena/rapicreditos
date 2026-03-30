@@ -56,6 +56,8 @@ interface Loan {
         full_name: string;
         phone: string;
     };
+    client_name?: string;
+    client_phone?: string;
 }
 
 const Loans = () => {
@@ -91,10 +93,11 @@ const Loans = () => {
 
         // Filter by search term
         if (searchTerm) {
+            const search = searchTerm.toLowerCase();
             filtered = filtered.filter(
                 (loan) =>
-                    loan.loan_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    loan.clients?.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+                    loan.loan_number.toLowerCase().includes(search) ||
+                    (loan.clients?.full_name || loan.client_name || "").toLowerCase().includes(search)
             );
         }
 
@@ -392,8 +395,8 @@ const Loans = () => {
                                                     <TableCell className="font-medium">{loan.loan_number}</TableCell>
                                                     <TableCell>
                                                         <div>
-                                                            <p className="font-medium">{loan.clients?.full_name}</p>
-                                                            <p className="text-xs text-muted-foreground">{loan.clients?.phone}</p>
+                                                            <p className="font-medium">{loan.clients?.full_name || loan.client_name}</p>
+                                                            <p className="text-xs text-muted-foreground">{loan.clients?.phone || loan.client_phone}</p>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>{formatCurrency(loan.total_amount)}</TableCell>
@@ -428,7 +431,7 @@ const Loans = () => {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <span className="font-bold text-lg text-primary">{loan.clients?.full_name}</span>
+                                                            <span className="font-bold text-lg text-primary">{loan.clients?.full_name || loan.client_name}</span>
                                                             <Badge variant="outline" className="text-[10px] h-5">{loan.loan_number}</Badge>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground flex items-center gap-1">
