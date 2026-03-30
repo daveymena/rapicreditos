@@ -184,21 +184,21 @@ const Loans = () => {
                             Administra y da seguimiento a todos tus préstamos
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 flex-wrap">
                         <Button
                             variant="outline"
                             onClick={() => navigate("/simulator")}
                             className="hover:bg-primary/5 hover:border-primary"
                         >
-                            <TrendingUp className="mr-2 w-4 h-4" />
-                            Simulador
+                            <TrendingUp className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Simulador</span>
                         </Button>
                         <Button
                             onClick={() => navigate("/loans/new")}
                             className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow"
                         >
-                            <Plus className="mr-2 w-5 h-5" />
-                            Nuevo Préstamo
+                            <Plus className="w-5 h-5 sm:mr-2" />
+                            <span className="hidden sm:inline">Nuevo Préstamo</span>
                         </Button>
                     </div>
                 </div>

@@ -211,15 +211,15 @@ const Clients = () => {
             <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
             <p className="text-muted-foreground">Gestiona tu cartera de clientes</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() => handleExport()}
               className="border-primary/20 hover:bg-primary/5"
               title="Descargar lista actual"
             >
-              <Download className="mr-2 w-4 h-4" />
-              Exportar
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Exportar</span>
             </Button>
             <Button
               variant="ghost"
@@ -227,8 +227,8 @@ const Clients = () => {
               className="text-muted-foreground hover:text-primary"
               title="Descargar plantilla para importar"
             >
-              <FileSpreadsheet className="mr-2 w-4 h-4" />
-              Plantilla
+              <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Plantilla</span>
             </Button>
             <div className="relative">
               <input
@@ -243,16 +243,16 @@ const Clients = () => {
                 onClick={() => document.getElementById("csv-import")?.click()}
                 className="border-primary/20 hover:bg-primary/5"
               >
-                <Upload className="mr-2 w-4 h-4" />
-                Importar
+                <Upload className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Importar</span>
               </Button>
             </div>
             <Button
               onClick={() => navigate("/clients/new")}
               className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow"
             >
-              <Plus className="mr-2 w-5 h-5" />
-              Nuevo Cliente
+              <Plus className="w-5 h-5 sm:mr-2" />
+              <span className="hidden sm:inline">Nuevo Cliente</span>
             </Button>
           </div>
         </div>

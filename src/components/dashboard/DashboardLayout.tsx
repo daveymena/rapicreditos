@@ -138,8 +138,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           flex flex-col
         `}
         animate={{
-          width: isSidebarOpen ? (isMobile ? "80%" : "280px") : (isMobile ? "0px" : "80px"),
-          x: isMobile && !isSidebarOpen ? -100 : 0
+          width: isSidebarOpen ? (isMobile ? "280px" : "280px") : (isMobile ? "0px" : "80px"),
+          x: isMobile && !isSidebarOpen ? "-100%" : 0
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
@@ -253,7 +253,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </motion.aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300">
+      <main className="flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300 min-w-0">
 
         {/* Mobile Header */}
         <header className="lg:hidden h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sticky top-0 z-30">

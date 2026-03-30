@@ -48,7 +48,7 @@ const CTA = () => {
             transition={{ delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button asChild size="lg" className="group bg-gradient-gold hover:opacity-90 text-accent-foreground shadow-glow-gold transition-all duration-300 hover:shadow-xl text-lg px-10 py-7">
+            <Button asChild size="lg" className="group bg-gradient-gold hover:opacity-90 text-accent-foreground shadow-glow-gold transition-all duration-300 hover:shadow-xl text-base sm:text-lg px-8 py-6 w-full sm:w-auto">
               <Link to="/register">
                 Crear cuenta gratis
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />

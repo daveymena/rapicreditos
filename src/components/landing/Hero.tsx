@@ -55,15 +55,15 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full"
           >
-            <Button asChild size="lg" className="group bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow transition-all duration-300 hover:shadow-xl text-lg px-8 py-6">
+            <Button asChild size="lg" className="group bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow transition-all duration-300 hover:shadow-xl text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6 w-full sm:w-auto">
               <Link to="/register">
                 Comenzar Gratis
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button asChild variant="secondary" size="lg" className="bg-white text-primary hover:bg-zinc-100 shadow-lg text-lg px-8 py-6 font-semibold">
+            <Button asChild variant="secondary" size="lg" className="bg-white text-primary hover:bg-zinc-100 shadow-lg text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6 font-semibold w-full sm:w-auto">
               <Link to="/login">
                 Ya tengo cuenta
               </Link>
