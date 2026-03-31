@@ -5,10 +5,11 @@
 ![RapiCréditos](https://img.shields.io/badge/RapiCréditos-Pro-emerald?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+![EasyPanel](https://img.shields.io/badge/EasyPanel-Ready-orange?style=for-the-badge)
 
 **Plataforma Profesional de Gestión de Préstamos con Inteligencia Artificial**
 
-[Demo](http://localhost:8080) · [Documentación](./GUIA_DE_USO.md) · [Reportar Bug](https://github.com/daveymena/rapicr-ditos-pro/issues)
+[Demo en Producción](https://ollama-rapicredisas2.ginee6.easypanel.host) · [Guía de Uso](./GUIA_DE_USO.md) · [Configuración EasyPanel](./INSTRUCCIONES_DESPLIEGUE.md)
 
 </div>
 
@@ -17,40 +18,32 @@
 ## 🌟 Características Principales
 
 ### 🤖 Inteligencia Artificial Integrada
-- **Ollama AI** para análisis de comportamiento de clientes
+- **Ollama AI** - Procesamiento local y en la nube para análisis de clientes
+- **Groq** - Motor de IA ultra-rápido como alternativa
 - Generación automática de mensajes de cobro personalizados
-- Predicción de riesgo de mora
-- Análisis de patrones de pago
+- Respuestas inteligentes por WhatsApp a clientes
 
-### 💬 Integración WhatsApp
+### 💬 Integración WhatsApp (Baileys)
 - Sincronización mediante código QR
-- Envío masivo de recordatorios
-- Mensajes automáticos generados por IA
-- Notificaciones en tiempo real
+- Bot de cobranza automático con IA
+- Recordatorios diarios automáticos (8:00 AM)
+- Mensajes personalizados con datos del cliente
 
 ### 📊 Dashboard Analítico
-- **Capital en la Calle:** Dinero total prestado
+- **Capital en la Calle:** Dinero total prestado activo
 - **Clientes Activos:** Gestión completa de cartera
 - **Préstamos en Mora:** Alertas automáticas
-- **Ganancias Totales:** Reportes en tiempo real
+- **Ganancias Totales:** Cobros registrados
 
 ### 🧮 Simulador Inteligente
-- Cálculo automático de cuotas
-- Múltiples frecuencias (diario, semanal, quincenal, mensual)
-- Proyección de intereses
-- Fechas de vencimiento automáticas
+- Cálculo automático de cuotas (diario, semanal, quincenal, mensual)
+- Múltiples tipos de interés (simple y compuesto)
+- Proyección de fechas de vencimiento
 
-### 👤 Gestión de Perfil Profresional
-- Configuración de negocio y personalización
-- Estado de conexión de WhatsApp
-- Estadísticas personales de cuenta
-- Gestión de seguridad y notificaciones
-
-### 📄 Documentos Profesionales
-- Recibos de pago en PDF
-- Certificados de Paz y Salvo
-- Historial completo de transacciones
-- Exportación a Excel
+### 💳 Pagos Integrados
+- **MercadoPago** - Para clientes en Colombia (COP)
+- **PayPal** - Para clientes internacionales (USD)
+- Webhooks automáticos para activar suscripciones
 
 ---
 
@@ -58,204 +51,169 @@
 
 ### Prerrequisitos
 
-- Node.js 18+ 
+- Node.js 20+
 - PostgreSQL 14+
-- npm o bun
+- npm
 
-### Instalación
+### Instalación Local
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/daveymena/rapicr-ditos-pro.git
-cd rapicr-ditos-pro
+# 1. Clonar el repositorio
+git clone https://github.com/daveymena/repicreditosst.git
+cd repicreditosst
 
-# Instalar dependencias
+# 2. Instalar dependencias del frontend
 npm install
 
-# Configurar variables de entorno
-cp .env.example .env
-# Edita .env con tus credenciales
+# 3. Instalar dependencias del backend
+cd backend
+npm install
+cd ..
 
-# Ejecutar en desarrollo
+# 4. Configurar variables de entorno del backend
+cp backend/.env.example backend/.env
+# Editar backend/.env con tus credenciales
+
+# 5. Levantar el backend (puerto 3001)
+npm run dev:backend
+
+# 6. En otra terminal, levantar el frontend (puerto 5173)
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:8080`
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:3001
+- *El frontend hace proxy de /api/* → localhost:3001*
 
 ---
 
-## 🗄️ Configuración de Base de Datos
+## 🗄️ Base de Datos
 
-### PostgreSQL (Recomendado)
+### Esquema PostgreSQL
 
-La aplicación usa PostgreSQL como base de datos principal. Configura las siguientes variables en tu archivo `.env`:
+Ejecutar en orden en tu base de datos PostgreSQL:
 
-```env
-# PostgreSQL Configuration
-DATABASE_URL="postgresql://postgres:PASSWORD@HOST:PORT/DATABASE?sslmode=disable"
-POSTGRES_USER="postgres"
-POSTGRES_PASSWORD="tu_contraseña"
-POSTGRES_DB="posgres-db"
-POSTGRES_HOST="localhost"
-POSTGRES_PORT="5432"
+```sql
+-- 1. Schema principal
+\i SCHEMA_SUPABASE.sql
+
+-- O el schema completo con todas las tablas:
+\i SCHEMA_COMPLETO.sql
 ```
 
-### Supabase (Opcional)
-
-También soporta Supabase para funciones serverless:
-
-```env
-VITE_SUPABASE_PROJECT_ID="tu_project_id"
-VITE_SUPABASE_PUBLISHABLE_KEY="tu_publishable_key"
-VITE_SUPABASE_URL="https://tu-proyecto.supabase.co"
-```
-
-### Esquema de Base de Datos
-
-La aplicación incluye las siguientes tablas:
-
-- **clients**: Información de clientes
-- **loans**: Préstamos activos y completados
-- **payments**: Registro de pagos
-- **profiles**: Perfiles de usuario
-- **reminders**: Recordatorios y mensajes
+### Tablas principales:
+- **`users`** - Usuarios/prestamistas del sistema
+- **`clients`** - Clientes de cada prestamista
+- **`loans`** - Préstamos activos y completados
+- **`payments`** - Registro de pagos
+- **`whatsapp_sessions`** - Sesiones de WhatsApp por usuario
+- **`messages`** - Historial de mensajes del bot
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🚢 Despliegue en EasyPanel
+
+### Configuración Automática
+
+EasyPanel puede desplegar directamente desde este repositorio usando el `Dockerfile` incluido.
+
+```bash
+# Configurar en EasyPanel:
+# 1. Fuente: GitHub → daveymena/repicreditosst → main
+# 2. Build: Dockerfile
+# 3. Puerto: 8080
+# 4. Variables de entorno: copiar desde EASYPANEL_ENV_NUEVO.txt
+```
+
+### Variables de Entorno Requeridas
+
+Ver el archivo `EASYPANEL_ENV_NUEVO.txt` para la lista completa.
+
+Las variables críticas:
+
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | URL de conexión a PostgreSQL |
+| `JWT_SECRET` | Clave secreta para tokens JWT |
+| `PORT` | Puerto del servidor (8080) |
+| `APP_URL` | URL pública de tu app |
+| `OLLAMA_BASE_URL` | URL del servidor Ollama para IA |
+| `MERCADOPAGO_ACCESS_TOKEN` | Token de MercadoPago |
+| `PAYPAL_CLIENT_ID` | Client ID de PayPal |
+
+### Arquitectura en Producción
+
+```
+Internet → EasyPanel (puerto 8080)
+              ├── Express Backend (Node.js)
+              │   ├── /api/* → REST API endpoints
+              │   └── /* → Archivos estáticos del frontend (Vite build)
+              └── PostgreSQL (servicio interno EasyPanel)
+```
+
+---
+
+## 🛠️ Stack Tecnológico
 
 ### Frontend
-- **React 18** - Librería UI
-- **TypeScript** - Tipado estático
+- **React 18** + **TypeScript**
 - **Vite** - Build tool ultra rápido
-- **TailwindCSS** - Estilos utility-first
-- **Shadcn/ui** - Componentes premium
+- **TailwindCSS** + **Shadcn/ui** - Componentes premium
 - **Framer Motion** - Animaciones fluidas
-- **React Query** - Gestión de estado servidor
+- **React Query** - Gestión de estado del servidor
 
-### Backend & Database
-- **Supabase** - Backend as a Service
-- **PostgreSQL** - Base de datos relacional
-- **Supabase Auth** - Autenticación
-- **Supabase Storage** - Almacenamiento de archivos
+### Backend
+- **Node.js** + **Express** + **TypeScript**
+- **PostgreSQL** - Base de datos principal
+- **JWT** - Autenticación stateless
+- **Baileys** - Integración WhatsApp Web
+- **bcryptjs** - Hash seguro de contraseñas
 
 ### IA & Automatización
-- **Ollama** - Procesamiento de lenguaje natural local
-- **WhatsApp Web API** - Mensajería automatizada
+- **Ollama** - Modelos de IA locales/en la nube
+- **Groq API** - Inferencia ultra-rápida (alternativa)
+- **WhatsApp Baileys** - Bot de cobranza automatizado
 
 ---
 
-## 📱 Características Responsive
+## 📁 Estructura del Proyecto
 
-La aplicación es **100% responsive** y funciona perfectamente en:
-
-- 📱 Smartphones (iOS y Android)
-- 💻 Tablets
-- 🖥️ Desktop
-
-### PWA (Progressive Web App)
-
-Puedes instalar RapiCréditos como una aplicación nativa:
-
-1. Abre la app en tu navegador móvil
-2. Toca el menú del navegador
-3. Selecciona "Agregar a pantalla de inicio"
-4. ¡Listo! Ahora tienes un ícono como una app nativa
-
----
-
-## 📖 Documentación
-
-Para una guía completa de uso, consulta [GUIA_DE_USO.md](./GUIA_DE_USO.md)
-
-### Temas cubiertos:
-- Registro e inicio de sesión
-- Gestión de clientes
-- Creación de préstamos
-- Registro de pagos
-- Configuración de WhatsApp
-- Uso de IA para mensajes
-- Generación de reportes
+```
+repicreditosst/
+├── src/                    # Frontend React/TypeScript
+│   ├── components/         # Componentes reutilizables
+│   ├── pages/              # Páginas de la app
+│   ├── lib/                # Utilidades y cliente API
+│   └── integrations/       # Integraciones (Supabase types)
+├── backend/                # Backend Express/TypeScript
+│   ├── src/
+│   │   ├── index.ts        # Servidor principal + todas las rutas
+│   │   └── services/       # Servicios (DB, Auth, WhatsApp, AI)
+│   ├── .env.example        # Template de variables de entorno
+│   └── package.json
+├── Dockerfile              # Build multi-stage para EasyPanel
+├── easypanel.json          # Configuración de EasyPanel
+├── EASYPANEL_ENV_NUEVO.txt # Variables de entorno para EasyPanel
+├── SCHEMA_SUPABASE.sql     # Esquema base de PostgreSQL
+└── SCHEMA_COMPLETO.sql     # Esquema completo con todas las tablas
+```
 
 ---
 
 ## 🔐 Seguridad
 
-- ✅ Autenticación segura con Supabase Auth
-- ✅ Encriptación de datos en tránsito (HTTPS)
-- ✅ Encriptación de datos en reposo
-- ✅ Row Level Security (RLS) en PostgreSQL
-- ✅ Validación de datos en cliente y servidor
-- ✅ Protección contra SQL Injection
-- ✅ Protección CSRF
-
----
-
-## 🚢 Despliegue
-
-### Vercel (Recomendado)
-
-```bash
-# Instalar Vercel CLI
-npm i -g vercel
-
-# Desplegar
-vercel
-```
-
-### Netlify
-
-```bash
-# Build
-npm run build
-
-# Desplegar carpeta dist/
-```
-
-### Docker
-
-```bash
-# Build image
-docker build -t rapicreditos-pro .
-
-# Run container
-docker run -p 8080:8080 rapicreditos-pro
-```
-
----
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas! Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
----
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+- ✅ JWT con expiración de 7 días
+- ✅ Contraseñas hasheadas con bcrypt (12 rounds)
+- ✅ Validación de ownership en cada endpoint (user_id)
+- ✅ CORS configurado para dominios específicos
+- ✅ Rate limiting implícito en API
 
 ---
 
 ## 👨‍💻 Autor
 
 **Davey Mena**
-
 - GitHub: [@daveymena](https://github.com/daveymena)
-
----
-
-## 🙏 Agradecimientos
-
-- [Shadcn/ui](https://ui.shadcn.com/) por los componentes UI
-- [Supabase](https://supabase.com/) por el backend
-- [Vercel](https://vercel.com/) por el hosting
-- [Ollama](https://ollama.ai/) por la IA local
 
 ---
 

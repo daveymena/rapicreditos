@@ -1,6 +1,6 @@
 {
   "schema": "https://schema.easypanel.io/app.json",
-  "name": "repicreditosst",
+  "name": "rapicreditos-pro",
   "services": [
     {
       "type": "app",
@@ -23,7 +23,7 @@
           "command": null,
           "zeroDowntime": true
         },
-        "env": "DATABASE_URL=postgres://postgres:6715320D@ollama_rapi-credi:5432/posgres-db\nJWT_SECRET=rapicredi_jwt_secret_2026_super_secure_key\nPORT=8080\nNODE_ENV=production\nAPP_URL=https://ollama-rapicredisas2.ginee6.easypanel.host\nOLLAMA_BASE_URL=https://n8n-ollama.ginee6.easypanel.host\nOLLAMA_CHAT_MODEL=qwen2.5:0.5b\nGROQ_API_KEY=\nGROQ_MODEL=llama-3.1-8b-instant\nMERCADOPAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453\nPAYPAL_CLIENT_ID=BAAtdQwVN8LvIoRstmHZWlo2ndcJBP8dFZdXLc8HJGdYUXstriO6mO0GJMZimkBCdZHotBkulELqeFm_R4\nPAYPAL_CLIENT_SECRET=EP5jZdzbUuHva4I8ERnbNYSHQ_BNe0niXQe91Bvf33Kl88nRKY-ivRx0_PGERS72JbjQSiMr63y9lEEL\nPAYPAL_MODE=live\nPAYPAL_API_URL=https://api-m.paypal.com",
+        "env": "DATABASE_URL=postgres://postgres:6715320D@ollama_rapi-credi:5432/posgres-db\nJWT_SECRET=rapicredi_jwt_secret_2026_super_secure_key\nPORT=8080\nNODE_ENV=production\nAPP_URL=https://ollama-rapicredisas2.ginee6.easypanel.host\nOLLAMA_BASE_URL=https://n8n-ollama.ginee6.easypanel.host\nOLLAMA_CHAT_MODEL=qwen2.5:0.5b\nOPENWEBUI_URL=https://n8n-ollama.ginee6.easypanel.host\nAI_PROVIDER=ollama\nAI_MODEL=qwen2.5:0.5b\nAI_BASE_URL=https://n8n-ollama.ginee6.easypanel.host/api/generate\nGROQ_API_KEY=\nGROQ_MODEL=llama-3.1-8b-instant\nMERCADOPAGO_PUBLIC_KEY=APP_USR-23c2d74a-d01f-473e-a305-0e5999f023bc\nMERCADOPAGO_ACCESS_TOKEN=APP_USR-8419296773492182-072623-ec7505166228860ec8b43957c948e7da-2021591453\nPAYPAL_CLIENT_ID=BAAtdQwVN8LvIoRstmHZWlo2ndcJBP8dFZdXLc8HJGdYUXstriO6mO0GJMZimkBCdZHotBkulELqeFm_R4\nPAYPAL_CLIENT_SECRET=EP5jZdzbUuHva4I8ERnbNYSHQ_BNe0niXQe91Bvf33Kl88nRKY-ivRx0_PGERS72JbjQSiMr63y9lEEL\nPAYPAL_MODE=live\nPAYPAL_API_URL=https://api-m.paypal.com",
         "ports": [
           {
             "published": 8080,

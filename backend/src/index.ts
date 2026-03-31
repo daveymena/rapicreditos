@@ -32,12 +32,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '2mb' }));
 
-// Forzar UTF-8 en todas las respuestas JSON
-app.use((_req, res, next) => {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  next();
-});
-
 const activeSessions: { [key: string]: WhatsAppService } = {};
 const sessionLocks = new Set<string>();
 
