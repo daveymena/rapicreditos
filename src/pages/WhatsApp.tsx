@@ -77,7 +77,7 @@ const WhatsApp = () => {
         setQrCode("");
         toast.info("Iniciando Baileys, generando QR...");
         try {
-            await api.post(`/sessions/${sessionId}/restart`, { userId: user?.id });
+            await api.post(`/whatsapp/sessions/${sessionId}/restart`, { userId: user?.id });
         } catch (e) {
             console.error('Error connecting:', e);
         }
@@ -89,7 +89,7 @@ const WhatsApp = () => {
     const handleDisconnect = async () => {
         if (!sessionId) return;
         try {
-            await api.post(`/sessions/${sessionId}/restart`, { userId: user?.id });
+            await api.post(`/whatsapp/sessions/${sessionId}/restart`, { userId: user?.id });
         } catch {}
         setIsConnected(false);
         setQrCode("");

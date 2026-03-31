@@ -297,7 +297,7 @@ app.post('/api/whatsapp/sessions', authMiddleware, async (req: any, res) => {
   }
 });
 
-app.post('/api/sessions/:id/restart', authMiddleware, async (req: any, res) => {
+app.post('/api/whatsapp/sessions/:id/restart', authMiddleware, async (req: any, res) => {
   const { id } = req.params;
   if (sessionLocks.has(id)) return res.json({ message: 'Sesión ya está iniciando' });
 
