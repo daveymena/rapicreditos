@@ -74,12 +74,12 @@ app.get('/api/auth/me', authMiddleware, async (req: any, res) => {
 });
 
 app.put('/api/auth/profile', authMiddleware, async (req: any, res) => {
-  const { full_name, business_name, phone, address, avatar_url } = req.body;
+  const { full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions } = req.body;
   try {
     const result = await query(
-      `UPDATE public.users SET full_name=$1, business_name=$2, phone=$3, address=$4, avatar_url=$5
-       WHERE id=$6 RETURNING id, email, full_name, business_name, phone, address, avatar_url, subscription_status`,
-      [full_name, business_name, phone, address, avatar_url, req.user.userId]
+      `UPDATE public.users SET full_name=$1, business_name=$2, phone=$3, address=$4, avatar_url=$5, payment_qr_url=$6, payment_instructions=$7
+       WHERE id=$8 RETURNING id, email, full_name, business_name, phone, address, avatar_url, subscription_status, payment_qr_url, payment_instructions`,
+      [full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions, req.user.userId]
     );
     res.json({ user: result.rows[0] });
   } catch (e: any) {

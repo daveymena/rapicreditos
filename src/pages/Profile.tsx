@@ -70,8 +70,8 @@ const Profile = () => {
                 business_name: user.business_name || "",
                 avatar_url: user.avatar_url || "",
                 whatsapp_connected: user.whatsapp_connected || false,
-                payment_qr_url: "",
-                payment_instructions: "",
+                payment_qr_url: (user as any).payment_qr_url || "",
+                payment_instructions: (user as any).payment_instructions || "",
             });
         }
     }, [user]);
@@ -89,6 +89,8 @@ const Profile = () => {
                 phone: profileData.phone || null,
                 address: profileData.address || null,
                 avatar_url: profileData.avatar_url || null,
+                payment_qr_url: profileData.payment_qr_url || null,
+                payment_instructions: profileData.payment_instructions || null,
             });
             await refreshUser();
             toast.success("¡Perfil actualizado!");
