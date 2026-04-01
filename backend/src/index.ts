@@ -15,7 +15,6 @@ export const activeSessions: { [key: string]: WhatsAppService } = {};
 const sessionLocks = new Set<string>();
 
 const app = express();
-const sessionLocks = new Set<string>();
 
 // ─── AUTH ROUTES ──────────────────────────────────────────
 

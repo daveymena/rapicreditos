@@ -28,7 +28,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const AdSpace = ({ position }: { position: "sidebar" | "banner" | "mobile" | "fixed-bottom" | "footer" }) => {
+const AdSpace = ({ position, isTrialExpired }: { position: string, isTrialExpired: boolean }) => {
   if (position === "sidebar") {
     return (
       <div className="mx-3 mt-auto mb-4">
@@ -51,6 +51,7 @@ const AdSpace = ({ position }: { position: "sidebar" | "banner" | "mobile" | "fi
     );
   }
   if (position === "fixed-bottom") {
+    if (!isTrialExpired) return null;
     return (
       <div className="fixed bottom-24 left-0 w-full z-40 bg-background/90 backdrop-blur-sm border-t border-border flex justify-center py-1 lg:hidden">
         <AdSlot slot="mobile-bottom" />
@@ -64,7 +65,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isPro, setIsPro] = useState(false);
-  const { user, signOut, subscriptionStatus } = useAuth();
+  const { user, signOut, subscriptionStatus, isTrialExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -232,7 +233,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           ))}
 
           {/* Ad Space */}
-          {isSidebarOpen && !isPro && <div className="pt-6"><AdSpace position="sidebar" /></div>}
+          {isSidebarOpen && !isPro && <div className="pt-6"><AdSpace position="sidebar" isTrialExpired={isTrialExpired} /></div>}
         </nav>
 
         {/* User Footer Section */}
@@ -282,7 +283,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="absolute top-[-10%] right-[-5%] w-[30%] h-[30%] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-5%] w-[20%] h-[20%] bg-accent/5 rounded-full blur-[80px] pointer-events-none" />
 
-          {!isPro && <div className="mb-8"><AdSpace position="banner" /></div>}
+          {!isPro && <div className="mb-8"><AdSpace position="banner" isTrialExpired={isTrialExpired} /></div>}
 
           <div className="max-w-7xl mx-auto pb-4">
             <AnimatePresence mode="wait">
@@ -296,7 +297,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {children}
               </motion.div>
             </AnimatePresence>
-            {!isPro && <AdSpace position="footer" />}
+            {!isPro && <AdSpace position="footer" isTrialExpired={isTrialExpired} />}
           </div>
         </div>
       </main>
@@ -306,7 +307,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {!isPro && (
         <>
           <AdPopup />
-          <AdSpace position="fixed-bottom" />
+          <AdSpace position="fixed-bottom" isTrialExpired={isTrialExpired} />
         </>
       )}
     </div>

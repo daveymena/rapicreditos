@@ -58,7 +58,7 @@ const FIRST_DELAY = 30000;   // 30 segundos la primera vez
 const REPEAT_DELAY = 300000; // cada 5 minutos después
 
 const AdPopup = () => {
-    const { subscriptionStatus } = useAuth();
+    const { subscriptionStatus, isTrialExpired } = useAuth();
     const [visible, setVisible] = useState(false);
     const [isPro, setIsPro] = useState(true);
     const [adIndex, setAdIndex] = useState(0);
@@ -68,8 +68,8 @@ const AdPopup = () => {
     useEffect(() => {
         const pro = subscriptionStatus === "pro" || subscriptionStatus === "active";
         setIsPro(pro);
-        if (!pro) scheduleNext(FIRST_DELAY);
-    }, [subscriptionStatus]);
+        if (!pro && isTrialExpired) scheduleNext(FIRST_DELAY);
+    }, [subscriptionStatus, isTrialExpired]);
 
     const scheduleNext = (delay: number) => {
         setTimeout(() => {
@@ -91,7 +91,7 @@ const AdPopup = () => {
         navigate("/pricing");
     };
 
-    if (isPro) return null;
+    if (isPro || !isTrialExpired) return null;
 
     const ad = ADS[adIndex];
 
