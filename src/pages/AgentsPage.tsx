@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/apiClient';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Bot, Save, Sparkles, Wand2, Stethoscope, Briefcase, ShoppingCart, Home, Code, GraduationCap, Loader2, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -27,55 +27,47 @@ export default function AgentsPage() {
 
     async function fetchAgents() {
         if (!user) return;
-        const { data, error } = await supabase
-            .from('ai_agents')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-
-        if (error) toast.error('Error al cargar agentes');
-        else setAgents(data || []);
-        setLoading(false);
+        try {
+            const data = await api.get<any[]>('/agents');
+            setAgents(data || []);
+        } catch (error) {
+            toast.error('Error al cargar agentes');
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function createAgent() {
         if (!user) return;
         setSaving(true);
-
-        const newAgent = {
-            user_id: user.id,
-            name: 'Nuevo Agente',
-            system_prompt: 'Eres un asistente IA inteligente y servicial.',
-            model_name: 'qwen2.5:3b',
-            temperature: 0.7
-        };
-
-        const { data, error } = await supabase
-            .from('ai_agents')
-            .insert([newAgent])
-            .select();
-
-        if (error) toast.error('Error al crear agente');
-        else {
+        try {
+            const newAgent = {
+                name: 'Nuevo Agente',
+                system_prompt: 'Eres un asistente IA inteligente y servicial.',
+                model_name: 'qwen2.5:3b',
+                temperature: 0.7
+            };
+            const data = await api.post<any>('/agents', newAgent);
             toast.success('Agente configurado');
-            if (data) setAgents([data[0], ...agents]);
+            setAgents([data, ...agents]);
+        } catch (error) {
+            toast.error('Error al crear agente');
+        } finally {
+            setSaving(false);
         }
-        setSaving(false);
     }
 
     async function updateAgent(id: string, updates: any) {
         setSaving(true);
-        const { error } = await supabase
-            .from('ai_agents')
-            .update(updates)
-            .eq('id', id);
-
-        if (error) toast.error('Error al guardar');
-        else {
+        try {
+            await api.put(`/agents/${id}`, updates);
             toast.success('Agente actualizado correctamente');
             fetchAgents();
+        } catch (error) {
+            toast.error('Error al guardar');
+        } finally {
+            setSaving(false);
         }
-        setSaving(false);
     }
 
     return (

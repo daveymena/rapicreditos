@@ -198,6 +198,7 @@ const NewLoan = () => {
                 frequency: formData.frequency,
                 start_date: formData.startDate,
                 end_date: calculation.endDate,
+                collection_start_days: parseInt(formData.collectionStartDays) || 1,
                 notes: formData.notes || null,
             };
 

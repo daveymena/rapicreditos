@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   reset_token_expires TIMESTAMPTZ,
   subscription_status TEXT DEFAULT 'free',
   whatsapp_connected BOOLEAN DEFAULT FALSE,
+  payment_qr_url TEXT,
+  payment_instructions TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -79,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.loans (
   paid_amount DECIMAL(15,2) DEFAULT 0,
   paid_installments INTEGER DEFAULT 0,
   remaining_amount DECIMAL(15,2) NOT NULL,
+  collection_start_days INTEGER DEFAULT 1,
   status TEXT DEFAULT 'active' CHECK (status IN ('pending', 'active', 'completed', 'defaulted', 'cancelled')),
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

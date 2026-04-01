@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/apiClient';
 import { useAuth } from '@/components/auth/AuthContext';
 import {
     MessageSquare,
@@ -29,33 +29,19 @@ export default function AnalyticsPage() {
     async function fetchStats() {
         if (!user) return;
         setLoading(true);
-
-        // Total de mensajes enviados por agentes del usuario
-        const { count: msgs } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('sender_type', 'agent');
-
-        // Sesiones activas
-        const { count: sessions } = await supabase
-            .from('whatsapp_sessions')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('status', 'connected');
-
-        // Conversaciones totales
-        const { count: convs } = await supabase
-            .from('conversations')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id);
-
-        setStats({
-            totalMessages: msgs || 0,
-            activeSessions: sessions || 0,
-            totalConversations: convs || 0,
-            responseTime: "1.8s"
-        });
-        setLoading(false);
+        try {
+            const data = await api.get<any>('/analytics');
+            setStats({
+                totalMessages: data.totalMessages || 0,
+                activeSessions: data.activeSessions || 0,
+                totalConversations: data.totalConversations || 0,
+                responseTime: "1.8s"
+            });
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const cards = [

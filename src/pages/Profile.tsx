@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -41,6 +41,7 @@ interface ProfileData {
     whatsapp_connected: boolean;
     payment_qr_url: string;
     payment_instructions: string;
+    two_factor_enabled: boolean;
 }
 
 const Profile = () => {
@@ -58,6 +59,7 @@ const Profile = () => {
         whatsapp_connected: false,
         payment_qr_url: "",
         payment_instructions: "",
+        two_factor_enabled: false,
     });
 
     useEffect(() => {
@@ -72,6 +74,7 @@ const Profile = () => {
                 whatsapp_connected: user.whatsapp_connected || false,
                 payment_qr_url: (user as any).payment_qr_url || "",
                 payment_instructions: (user as any).payment_instructions || "",
+                two_factor_enabled: (user as any).two_factor_enabled || false,
             });
         }
     }, [user]);
@@ -91,6 +94,7 @@ const Profile = () => {
                 avatar_url: profileData.avatar_url || null,
                 payment_qr_url: profileData.payment_qr_url || null,
                 payment_instructions: profileData.payment_instructions || null,
+                two_factor_enabled: profileData.two_factor_enabled,
             });
             await refreshUser();
             toast.success("¡Perfil actualizado!");
@@ -193,6 +197,24 @@ const Profile = () => {
                                             checked={profileData.whatsapp_connected}
                                             onCheckedChange={(checked) =>
                                                 setProfileData({ ...profileData, whatsapp_connected: checked })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                                <Shield className="w-5 h-5 text-destructive" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm">Seguridad (2FA)</p>
+                                                <p className="text-xs text-muted-foreground">Doble Factor</p>
+                                            </div>
+                                        </div>
+                                        <Switch
+                                            checked={profileData.two_factor_enabled}
+                                            onCheckedChange={(checked) =>
+                                                setProfileData({ ...profileData, two_factor_enabled: checked })
                                             }
                                         />
                                     </div>

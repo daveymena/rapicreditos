@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { existsSync } from 'fs';
 import { query } from './services/db.js';
-import { registerUser, loginUser, getUserById, authMiddleware } from './services/authService.js';
+import { registerUser, loginUser, getUserById, verify2FA, authMiddleware } from './services/authService.js';
 import { WhatsAppService } from './services/whatsappService.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,28 +11,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+export const activeSessions: { [key: string]: WhatsAppService } = {};
+const sessionLocks = new Set<string>();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_CHAT_MODEL || 'qwen2.5:0.5b';
-const OPENWEBUI_URL = process.env.OPENWEBUI_URL || 'https://n8n-ollama.ginee6.easypanel.host';
-const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
-const PAYPAL_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
-const PAYPAL_API = process.env.PAYPAL_API_URL || 'https://api-m.paypal.com';
-
-app.use(cors({
-  origin: process.env.APP_URL
-    ? [process.env.APP_URL, 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:5173']
-    : '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.use(express.json({ limit: '2mb' }));
-
-const activeSessions: { [key: string]: WhatsAppService } = {};
 const sessionLocks = new Set<string>();
 
 // ─── AUTH ROUTES ──────────────────────────────────────────
@@ -61,6 +43,17 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/verify-2fa', async (req, res) => {
+  const { userId, code } = req.body;
+  if (!userId || !code) return res.status(400).json({ error: 'userId y code requeridos' });
+  try {
+    const result = await verify2FA(userId, code);
+    res.json(result);
+  } catch (e: any) {
+    res.status(401).json({ error: e.message });
+  }
+});
+
 app.get('/api/auth/me', authMiddleware, async (req: any, res) => {
   const user = await getUserById(req.user.userId);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -68,12 +61,15 @@ app.get('/api/auth/me', authMiddleware, async (req: any, res) => {
 });
 
 app.put('/api/auth/profile', authMiddleware, async (req: any, res) => {
-  const { full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions } = req.body;
+  const { full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions, two_factor_enabled } = req.body;
   try {
     const result = await query(
-      `UPDATE public.users SET full_name=$1, business_name=$2, phone=$3, address=$4, avatar_url=$5, payment_qr_url=$6, payment_instructions=$7
-       WHERE id=$8 RETURNING id, email, full_name, business_name, phone, address, avatar_url, subscription_status, payment_qr_url, payment_instructions`,
-      [full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions, req.user.userId]
+      `UPDATE public.users SET full_name=$1, business_name=$2, phone=$3, address=$4, avatar_url=$5, 
+              payment_qr_url=$6, payment_instructions=$7, two_factor_enabled=COALESCE($8, two_factor_enabled)
+       WHERE id=$9 
+       RETURNING id, email, full_name, business_name, phone, address, avatar_url, subscription_status, 
+                 payment_qr_url, payment_instructions, two_factor_enabled`,
+      [full_name, business_name, phone, address, avatar_url, payment_qr_url, payment_instructions, two_factor_enabled, req.user.userId]
     );
     res.json({ user: result.rows[0] });
   } catch (e: any) {
@@ -156,7 +152,7 @@ app.get('/api/loans', authMiddleware, async (req: any, res) => {
 
 app.post('/api/loans', authMiddleware, async (req: any, res) => {
   const { client_id, principal_amount, interest_rate, interest_type, total_interest, total_amount,
-    installments, installment_amount, frequency, start_date, end_date, remaining_amount, notes } = req.body;
+    installments, installment_amount, frequency, start_date, end_date, remaining_amount, collection_start_days, notes } = req.body;
   try {
     const countResult = await query(
       'SELECT COUNT(*) as count FROM public.loans WHERE user_id=$1',
@@ -168,11 +164,11 @@ app.post('/api/loans', authMiddleware, async (req: any, res) => {
     const result = await query(
       `INSERT INTO public.loans (user_id, client_id, loan_number, principal_amount, interest_rate, interest_type,
         total_interest, total_amount, installments, installment_amount, frequency, start_date, end_date,
-        remaining_amount, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+        remaining_amount, collection_start_days, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
       [req.user.userId, client_id, loanNumber, principal_amount, interest_rate, interest_type || 'simple',
         total_interest, total_amount, installments, installment_amount, frequency,
-        start_date, end_date, remaining_amount || total_amount, notes]
+        start_date, end_date, remaining_amount || total_amount, collection_start_days || 1, notes]
     );
     res.json(result.rows[0]);
   } catch (e: any) {
@@ -238,6 +234,68 @@ app.post('/api/loans/:loanId/payments', authMiddleware, async (req: any, res) =>
       [amount, req.params.loanId, req.user.userId]
     );
 
+    res.json(result.rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/analytics', authMiddleware, async (req: any, res) => {
+  try {
+    const userId = req.user.userId;
+    const [messages, sessions, conversations] = await Promise.all([
+      query("SELECT COUNT(*) as count FROM public.messages WHERE user_id=$1 AND sender_type='agent'", [userId]).catch(() => ({ rows: [{ count: '0' }] })),
+      query("SELECT COUNT(*) as count FROM public.whatsapp_sessions WHERE user_id=$1 AND status='connected'", [userId]),
+      query("SELECT COUNT(*) as count FROM public.conversations WHERE user_id=$1", [userId]).catch(() => ({ rows: [{ count: '0' }] }))
+    ]);
+
+    res.json({
+      totalMessages: parseInt(messages.rows[0].count),
+      activeSessions: parseInt(sessions.rows[0].count),
+      totalConversations: parseInt(conversations.rows[0].count)
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── AI AGENTS ──────────────────────────────────────────────
+
+app.get('/api/agents', authMiddleware, async (req: any, res) => {
+  try {
+    const result = await query(
+      'SELECT * FROM public.ai_agents WHERE user_id=$1 ORDER BY created_at DESC',
+      [req.user.userId]
+    );
+    res.json(result.rows);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/agents', authMiddleware, async (req: any, res) => {
+  const { name, system_prompt, model_name, temperature } = req.body;
+  try {
+    const result = await query(
+      `INSERT INTO public.ai_agents (user_id, name, system_prompt, model_name, temperature)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.user.userId, name || 'Nuevo Agente', system_prompt || '', model_name || 'qwen2.5:3b', temperature || 0.7]
+    );
+    res.json(result.rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/agents/:id', authMiddleware, async (req: any, res) => {
+  const { name, system_prompt, model_name, temperature } = req.body;
+  try {
+    const result = await query(
+      `UPDATE public.ai_agents SET name=COALESCE($1, name), system_prompt=COALESCE($2, system_prompt),
+       model_name=COALESCE($3, model_name), temperature=COALESCE($4, temperature), updated_at=NOW()
+       WHERE id=$5 AND user_id=$6 RETURNING *`,
+      [name, system_prompt, model_name, temperature, req.params.id, req.user.userId]
+    );
     res.json(result.rows[0]);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -585,4 +643,10 @@ app.listen(PORT, () => {
   console.log(`🐘 Base de datos: PostgreSQL EasyPanel`);
   monitorSessions();
   scheduleDailyAt8AM();
+});
+
+// Manejador de errores global
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('🔥 [ERROR GLOBAL]:', err.stack || err);
+  res.status(500).json({ error: 'Error interno del servidor', details: err.message });
 });

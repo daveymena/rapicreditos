@@ -46,7 +46,10 @@ export const authApi = {
     api.post<{ user: any; token: string }>('/auth/register', data),
 
   login: (email: string, password: string) =>
-    api.post<{ user: any; token: string }>('/auth/login', { email, password }),
+    api.post<any>('/auth/login', { email, password }),
+
+  verify2FA: (userId: string, code: string) =>
+    api.post<{ user: any; token: string }>('/auth/verify-2fa', { userId, code }),
 
   me: () => api.get<{ user: any }>('/auth/me'),
 

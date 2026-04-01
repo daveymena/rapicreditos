@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, Shield, Zap, Globe, CreditCard, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,6 @@ const Pricing = () => {
         if (timeZone.includes("Bogota") || timeZone.includes("Colombia")) {
             setCurrency("COP");
             setPrice(30000); // ~7.5 USD
-            createMercadoPagoPreference();
         } else {
             setCurrency("USD");
             setPrice(7);
@@ -204,7 +203,6 @@ const Pricing = () => {
                                         onClick={() => {
                                             setCurrency("COP");
                                             setPrice(30000);
-                                            createMercadoPagoPreference();
                                         }}
                                     >
                                         🇨🇴 Pagar en COP
