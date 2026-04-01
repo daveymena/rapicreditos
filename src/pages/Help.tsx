@@ -1,4 +1,4 @@
-﻿import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     Book,
     FileText,
@@ -10,11 +10,13 @@ import {
     MessageCircle,
     Download,
     Upload,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 const Help = () => {
@@ -36,8 +38,20 @@ const Help = () => {
                     </motion.div>
                 </div>
 
-                <Tabs defaultValue="getting-started" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-5 h-auto p-1 bg-muted/50 rounded-xl">
+                <div className="hidden">
+                    {/* Background Music Loop for Tutorial */}
+                    <audio 
+                        src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+                        id="tutorial-music" 
+                        loop
+                    />
+                </div>
+
+                <Tabs defaultValue="tutorial" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto p-1 bg-muted/50 rounded-xl">
+                        <TabsTrigger value="tutorial" className="data-[state=active]:bg-background py-3 font-bold text-primary">
+                            <Sparkles className="w-4 h-4 mr-2" /> Tutorial Video
+                        </TabsTrigger>
                         <TabsTrigger value="getting-started" className="data-[state=active]:bg-background py-3">
                             <Book className="w-4 h-4 mr-2" /> Inicio
                         </TabsTrigger>
@@ -56,6 +70,90 @@ const Help = () => {
                     </TabsList>
 
                     <div className="mt-8 space-y-6">
+                        {/* Video Tutorial Hub */}
+                        <TabsContent value="tutorial">
+                            <Card className="overflow-hidden border-primary/20 shadow-xl shadow-primary/5">
+                                <CardHeader className="bg-primary/5 border-b border-primary/10">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-2xl">Aprende a usar Krédit Pro</CardTitle>
+                                            <CardDescription>Guía completa paso a paso para optimizar tu negocio</CardDescription>
+                                        </div>
+                                        <div className="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold animate-pulse">
+                                            NUEVO CONTENIDO
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="grid lg:grid-cols-5 gap-0">
+                                        {/* Video Player Area */}
+                                        <div className="lg:col-span-3 bg-black aspect-video flex items-center justify-center relative overflow-hidden">
+                                            <img 
+                                                src="/assets/tutorial.webp" 
+                                                className="w-full h-full object-contain" 
+                                                alt="Tutorial Video Recording"
+                                                onError={(e) => {
+                                                    // Fallback if video hasn't been copied to public assets yet
+                                                    e.currentTarget.src = "https://placehold.co/1280x720/000/fff?text=Cargando+Video+Tutorial...";
+                                                }}
+                                            />
+                                            
+                                            {/* Music Toggle */}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="absolute bottom-4 right-4 bg-black/50 text-white border-white/20 hover:bg-black/70"
+                                                onClick={() => {
+                                                    const audio = document.getElementById('tutorial-music') as HTMLAudioElement;
+                                                    if (audio.paused) audio.play();
+                                                    else audio.pause();
+                                                }}
+                                            >
+                                                <MessageCircle className="w-4 h-4 mr-2" /> 
+                                                Activar Música/Video
+                                            </Button>
+
+                                            <div className="absolute top-4 left-4 flex gap-2">
+                                                <div className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                                                    REC
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Script / Narration Area - THE VOICE FOR CLIENTS */}
+                                        <div className="lg:col-span-2 p-6 bg-card overflow-y-auto max-h-[500px] border-l border-border">
+                                            <h4 className="font-bold flex items-center gap-2 mb-4 text-primary">
+                                                <Sparkles className="w-4 h-4" /> Guion de la Guía
+                                            </h4>
+                                            <div className="space-y-6 text-sm">
+                                                <div className="relative pl-6 border-l-2 border-primary/30">
+                                                    <span className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white">1</span>
+                                                    <p className="font-semibold text-foreground">Introducción al Éxito (0:00 - 0:30)</p>
+                                                    <p className="text-muted-foreground italic">"Bienvenido a la nueva era de tu negocio. Krédit Pro no es solo un software; es tu socio estratégico. Olvida el papel y los errores manuales..."</p>
+                                                </div>
+                                                <div className="relative pl-6 border-l-2 border-muted">
+                                                    <span className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">2</span>
+                                                    <p className="font-semibold text-foreground">Tu Cartera de Clientes (0:30 - 1:10)</p>
+                                                    <p className="text-muted-foreground italic">"Organiza tu activo más valioso. Importa tus contactos masivamente y ten toda su historia de pagos a un solo clic de distancia."</p>
+                                                </div>
+                                                <div className="relative pl-6 border-l-2 border-muted">
+                                                    <span className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">3</span>
+                                                    <p className="font-semibold text-foreground">Préstamos en Segundos (1:10 - 2:00)</p>
+                                                    <p className="text-muted-foreground italic">"Crea créditos con cálculos exactos. Deja que el sistema genere las tablas de amortización mientras tú te enfocas en crecer."</p>
+                                                </div>
+                                                <div className="relative pl-6 border-l-2 border-muted">
+                                                    <span className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">4</span>
+                                                    <p className="font-semibold text-foreground">Cobros con IA (2:00 - Fin)</p>
+                                                    <p className="text-muted-foreground italic">"Activa WhatsApp y deja que la IA cobre por ti. Notificaciones automáticas que mejoran tu flujo de caja sin esfuerzo."</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
                         {/* Getting Started */}
                         <TabsContent value="getting-started">
                             <Card>
