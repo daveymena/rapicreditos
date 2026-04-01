@@ -14,7 +14,31 @@ const __dirname = path.dirname(__filename);
 export const activeSessions: { [key: string]: WhatsAppService } = {};
 const sessionLocks = new Set<string>();
 
+dotenv.config();
+
 const app = express();
+const PORT = process.env.PORT || 3001;
+const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_CHAT_MODEL || 'qwen2.5:0.5b';
+const OPENWEBUI_URL = process.env.OPENWEBUI_URL || 'https://n8n-ollama.ginee6.easypanel.host';
+const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
+const PAYPAL_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
+const PAYPAL_API = process.env.PAYPAL_API_URL || 'https://api-m.paypal.com';
+
+app.use(cors({
+  origin: process.env.APP_URL
+    ? [process.env.APP_URL, 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:5173']
+    : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.use(express.json({ limit: '2mb' }));
+
+app.use((req, res, next) => {
+  console.log(`[HTTP] ${req.method} ${req.path}`);
+  next();
+});
 
 // ─── AUTH ROUTES ──────────────────────────────────────────
 
