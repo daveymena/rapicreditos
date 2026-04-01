@@ -115,6 +115,23 @@ const Profile = () => {
             .slice(0, 2);
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "avatar_url" | "payment_qr_url") => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("La imagen es demasiado grande. Máximo 2MB.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64 = reader.result as string;
+            setProfileData(prev => ({ ...prev, [field]: base64 }));
+        };
+        reader.readAsDataURL(file);
+    };
+
     if (authLoading) {
         return (
             <DashboardLayout>
@@ -162,21 +179,30 @@ const Profile = () => {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div className="flex flex-col items-center gap-4">
-                                    <Avatar className="w-32 h-32">
-                                        <AvatarImage src={profileData.avatar_url} />
-                                        <AvatarFallback className="text-2xl bg-gradient-primary text-primary-foreground">
-                                            {getInitials(profileData.full_name)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <Button variant="outline" size="sm" disabled>
-                                        <Camera className="mr-2 w-4 h-4" />
-                                        Cambiar Foto
-                                    </Button>
+                                    <div className="relative group">
+                                        <Avatar className="w-32 h-32 border-4 border-card shadow-2xl">
+                                            <AvatarImage src={profileData.avatar_url} />
+                                            <AvatarFallback className="text-2xl bg-gradient-primary text-primary-foreground">
+                                                {getInitials(profileData.full_name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <label 
+                                            htmlFor="avatar-upload" 
+                                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all border-4 border-card"
+                                        >
+                                            <Camera className="w-5 h-5" />
+                                            <input 
+                                                id="avatar-upload" 
+                                                type="file" 
+                                                accept="image/*" 
+                                                className="hidden" 
+                                                onChange={(e) => handleFileChange(e, "avatar_url")} 
+                                            />
+                                        </label>
+                                    </div>
                                     <p className="text-xs text-muted-foreground text-center">
                                         JPG, PNG o GIF. Máximo 2MB.
                                     </p>
-                                </div>
 
                                 <Separator />
 
@@ -352,39 +378,50 @@ const Profile = () => {
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="space-y-4">
                                         <Label>Código QR de Pago</Label>
-                                        <div className="flex flex-col items-center gap-4 p-4 border-2 border-dashed rounded-xl border-muted">
-                                            {profileData.payment_qr_url ? (
-                                                <div className="relative group w-40 h-40">
-                                                    <img
-                                                        src={profileData.payment_qr_url}
-                                                        alt="QR de Pago"
-                                                        className="w-full h-full object-contain rounded-lg shadow-sm"
-                                                    />
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="icon"
-                                                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => setProfileData({ ...profileData, payment_qr_url: "" })}
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                                                    <Camera className="w-10 h-10 opacity-20" />
-                                                    <p className="text-xs">Sube tu QR de Nequi, Daviplata, etc.</p>
-                                                </div>
-                                            )}
-                                            <Input
-                                                id="qr_upload"
-                                                type="url"
-                                                placeholder="Pega el enlace de tu imagen QR aquí"
-                                                value={profileData.payment_qr_url}
-                                                onChange={(e) => setProfileData({ ...profileData, payment_qr_url: e.target.value })}
-                                                className="text-xs"
-                                            />
-                                            <p className="text-[10px] text-muted-foreground">
-                                                Por ahora, pega el link directo de tu imagen QR.
+                                        <div className="flex flex-col items-center gap-4 w-full">
+                                            <div className="relative w-full aspect-square max-w-[200px] border-2 border-dashed rounded-2xl border-muted bg-muted/20 flex items-center justify-center overflow-hidden group">
+                                                {profileData.payment_qr_url ? (
+                                                    <>
+                                                        <img
+                                                            src={profileData.payment_qr_url}
+                                                            alt="QR de Pago"
+                                                            className="w-full h-full object-contain p-2"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                            <label htmlFor="qr-upload-change" className="p-2 bg-white/20 hover:bg-white/40 rounded-full cursor-pointer transition-colors">
+                                                                <Camera className="w-5 h-5 text-white" />
+                                                            </label>
+                                                            <button 
+                                                                onClick={() => setProfileData({ ...profileData, payment_qr_url: "" })}
+                                                                className="p-2 bg-red-500/80 hover:bg-red-600 rounded-full transition-colors"
+                                                            >
+                                                                <X className="w-5 h-5 text-white" />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <label htmlFor="qr-upload" className="flex flex-col items-center justify-center cursor-pointer w-full h-full hover:bg-muted/40 transition-colors gap-2">
+                                                        <Camera className="w-10 h-10 opacity-20" />
+                                                        <p className="text-xs text-muted-foreground font-medium">Subir Imagen QR</p>
+                                                        <input 
+                                                            id="qr-upload" 
+                                                            type="file" 
+                                                            accept="image/*" 
+                                                            className="hidden" 
+                                                            onChange={(e) => handleFileChange(e, "payment_qr_url")} 
+                                                        />
+                                                    </label>
+                                                )}
+                                                <input 
+                                                    id="qr-upload-change" 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    className="hidden" 
+                                                    onChange={(e) => handleFileChange(e, "payment_qr_url")} 
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground text-center">
+                                                Sube tu QR de Nequi, Daviplata o cualquier cuenta para que tus clientes lo vean.
                                             </p>
                                         </div>
                                     </div>

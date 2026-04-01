@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import SupportChat from "@/components/support/SupportChat";
 import AdSlot from "@/components/ads/AdSlot";
 import AdPopup from "@/components/ads/AdPopup";
+import WelcomeTour from "@/components/dashboard/WelcomeTour";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
@@ -304,6 +305,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Extra Services/Ads */}
       <SupportChat />
+      <WelcomeTour />
       {!isPro && (
         <>
           <AdPopup />

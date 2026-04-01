@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Bot, Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,7 +141,7 @@ const SupportChat = () => {
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.92 }}
                         onClick={handleOpen}
-                        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center"
+                        className="fixed bottom-28 right-6 lg:bottom-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center"
                     >
                         <MessageCircle className="w-6 h-6" />
                         {unread > 0 && (
@@ -162,7 +162,7 @@ const SupportChat = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 40, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                        className="fixed bottom-6 right-6 z-50 w-[360px] md:w-[400px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                        className="fixed bottom-28 right-6 lg:bottom-6 z-[150] w-[calc(100%-3rem)] md:w-[400px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                         style={{ height: isMinimized ? "64px" : "540px" }}
                     >
                         {/* Header */}
